@@ -28,6 +28,11 @@ export const router = createRouter({
       name: 'published-listings',
       component: () => import('../views/PublishedListingsView.vue'),
     },
+    {
+      path: '/vendas',
+      name: 'sales',
+      component: () => import('../views/SalesView.vue'),
+    },
     // compat: link antigo do painel de anúncios
     { path: '/anuncios', redirect: { name: 'published-listings' } },
   ],

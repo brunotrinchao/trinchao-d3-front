@@ -105,6 +105,57 @@ export interface MlFee {
   saleFeeAmount: number
 }
 
+/** Resposta de GET /api/marketplace/mercadolivre/sales-stats — vendas do mês corrente
+ * (Orders API) + saldo Mercado Pago. Fonte que falha vem `null` (nunca 0 falso). */
+export interface MlSalesStats {
+  vendasMes: {
+    quantidade: number
+    valorBruto: number
+    taxas: number
+    ticketMedio: number
+  } | null
+  recebidoTotal: {
+    disponivel: number
+    aLiberar: number
+    total: number
+  } | null
+}
+
+/** Pedido do vendedor (DTO de GET /api/marketplace/mercadolivre/orders). */
+export interface MlOrder {
+  id: string
+  dateCreated: string
+  status: string
+  statusPagamento: 'pago' | 'pendente' | 'recusado'
+  comprador: { nickname: string; nome: string }
+  itens: {
+    titulo: string
+    quantidade: number
+    precoUnitario: number
+    variacao?: string
+    sku?: string
+  }[]
+  total: number
+  taxa: number
+  envio: { id: string; status: string; substatus?: string } | null
+}
+
+/** Detalhe de envio (DTO de GET /api/marketplace/mercadolivre/orders/:id/shipment). */
+export interface MlShipmentDetail {
+  status: string
+  substatus?: string
+  rastreamento: string | null
+  metodo: string | null
+  endereco: {
+    rua: string
+    numero: string
+    complemento?: string
+    cep: string
+    cidade: string
+    estado: string
+  } | null
+}
+
 /** Cotação de envio ME2 por cobertura (resposta real de shipping_options/free).
  * listCost = custo cheio que o vendedor paga; discount = subsídio do ML. */
 export interface MlShippingQuote {
@@ -143,6 +194,7 @@ export interface Product {
   widthCm: number
   lengthCm: number
   status: ProductStatus
+  affiliateTag?: string | null
   createdAt: string
   updatedAt: string
   images?: ProductImage[]
@@ -173,6 +225,7 @@ export interface ProductInput {
   heightCm: number
   widthCm: number
   lengthCm: number
+  affiliateTag?: string | null
 }
 
 /** Body de POST/PUT de variações. */
@@ -213,7 +266,9 @@ export interface MlListing {
   title: string
   price: number
   availableQuantity: number
+  soldQuantity: number
   status: string
+  marketplace: Marketplace
   thumbnail: string | null
   permalink: string | null
   familyId: string | null

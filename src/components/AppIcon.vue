@@ -25,6 +25,7 @@ const paths: Record<string, string> = {
   pause: 'M8 5v14M16 5v14',
   play: 'm7 5 12 7-12 7V5Z',
   'chevron-down': 'm6 9 6 6 6-6',
+  copy: 'M9 9h11v11H9zM5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1',
   sync: 'M4 12a8 8 0 0 1 14.93-4M20 12a8 8 0 0 1-14.93 4M4 4v5h5M20 20v-5h-5',
   more: 'M12 5v.01M12 12v.01M12 19v.01',
   close: 'M18 6 6 18M6 6l12 12',

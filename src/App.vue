@@ -38,6 +38,7 @@ const crumb = computed(() => {
   if (route.path === '/') return 'Produtos'
   if (route.path === '/products/new') return 'Novo produto'
   if (route.path === '/publicados' || route.path === '/anuncios') return 'Publicados'
+  if (route.path === '/vendas') return 'Vendas'
   return 'Editar produto'
 })
 
@@ -85,6 +86,10 @@ const marketplaceTone = MARKETPLACE_TONE
           <RouterLink to="/publicados" class="nav-link">
             <AppIcon name="send" class="nav-ico text-muted" />
             Publicados
+          </RouterLink>
+          <RouterLink to="/vendas" class="nav-link">
+            <AppIcon name="wallet" class="nav-ico text-muted" />
+            Vendas
           </RouterLink>
         </nav>
 

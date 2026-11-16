@@ -3,6 +3,7 @@ import { computed, onMounted, reactive, ref } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useProductsStore } from '../stores/products'
 import { fetchMlListings } from '../api/marketplaceListings'
+import { getMlSalesStats } from '../api/marketplace'
 import { getProduct, publishProduct } from '../api/products'
 import { apiErrorMessage } from '../api/client'
 import AppIcon from '../components/AppIcon.vue'
@@ -17,7 +18,7 @@ import {
 } from '../composables/listingRows'
 import type { DisplayItem, MarketplaceLine, ProductGroup } from '../composables/listingRows'
 import { MARKETPLACE_LABELS, MARKETPLACES } from '../types'
-import type { Marketplace, MlListing, ProductDetail } from '../types'
+import type { Marketplace, MlListing, MlSalesStats, ProductDetail } from '../types'
 
 const store = useProductsStore()
 const { items } = storeToRefs(store)
@@ -26,6 +27,23 @@ const mlListings = ref<MlListing[]>([])
 const loadingRemote = ref(true)
 const remoteError = ref<string | null>(null)
 const actionError = ref<string | null>(null)
+
+/** Stats reais de venda (Orders API + saldo Mercado Pago) — falha por fonte = null. */
+const salesStats = ref<MlSalesStats | null>(null)
+const loadingSales = ref(true)
+const salesError = ref<string | null>(null)
+
+async function loadSalesStats(): Promise<void> {
+  loadingSales.value = true
+  salesError.value = null
+  try {
+    salesStats.value = await getMlSalesStats()
+  } catch (e) {
+    salesError.value = apiErrorMessage(e)
+  } finally {
+    loadingSales.value = false
+  }
+}
 
 async function loadRemote(): Promise<void> {
   loadingRemote.value = true
@@ -39,8 +57,7 @@ async function loadRemote(): Promise<void> {
 }
 
 onMounted(async () => {
-  await store.fetchAll()
-  await loadRemote()
+  await Promise.all([store.fetchAll(), loadRemote(), loadSalesStats()])
 })
 
 const marketplaceFilter = ref<'all' | Marketplace>('all')
@@ -57,12 +74,31 @@ const allGroups = computed<ProductGroup[]>(() =>
 
 /** Publicados = produtos com ≥1 listing published (fechado/excluído deixa de contar e
  * o produto volta pra lista de rascunhos). Anúncios remotos entram direto. */
+
+const stats = computed(() => {
+  const live = mlListings.value
+  const filtered = marketplaceFilter.value === 'all' ? live : live.filter((l) => l.marketplace === marketplaceFilter.value)
+  const active = filtered.filter((l) => l.status === 'active')
+  const sold = filtered.reduce((sum, l) => sum + (l.soldQuantity ?? 0), 0)
+  const gross = filtered.reduce((sum, l) => sum + (l.soldQuantity ?? 0) * l.price, 0)
+  return {
+    activeCount: active.length,
+    sold,
+    gross,
+  }
+})
 const visibleGroups = computed<ProductGroup[]>(() =>
   allGroups.value.filter((group) => {
     if (group.productId === null) return true
     const product = items.value.find((p) => p.id === group.productId)
     return product ? hasPublishedListing(product) : false
   }),
+)
+
+/** Bloco "Vendas do mês" é dado exclusivo da Orders API do ML — com filtro em outro
+ * marketplace, esconde (nunca mostrar número do ML como se fosse global). */
+const showVendasMes = computed(
+  () => marketplaceFilter.value === 'all' || marketplaceFilter.value === 'mercadolivre',
 )
 
 const lineVisible = (line: MarketplaceLine): boolean =>
@@ -146,6 +182,83 @@ function onRowError(message: string): void {
       </p>
     </header>
 
+    <!-- Stats (dados ao vivo do ML) -->
+    <div class="grid gap-4 sm:grid-cols-3">
+      <article class="card p-5">
+        <div class="flex items-center gap-2.5 text-sm text-ink-2">
+          <span class="icon-chip size-8 rounded-lg"><AppIcon name="send" :size="16" /></span>
+          Ativos
+        </div>
+        <p class="num mt-3 text-[30px] font-semibold leading-none">{{ stats.activeCount }}</p>
+        <p class="mt-2 text-[13px] text-muted">anúncios publicados ativos</p>
+      </article>
+      <article class="card p-5">
+        <div class="flex items-center gap-2.5 text-sm text-ink-2">
+          <span class="icon-chip size-8 rounded-lg"><AppIcon name="wallet" :size="16" /></span>
+          Vendidos
+        </div>
+        <p class="num mt-3 text-[30px] font-semibold leading-none">{{ stats.sold }}</p>
+        <p class="mt-2 text-[13px] text-muted">unidades vendidas</p>
+      </article>
+      <article class="card p-5">
+        <div class="flex items-center gap-2.5 text-sm text-ink-2">
+          <span class="icon-chip size-8 rounded-lg"><AppIcon name="wallet" :size="16" /></span>
+          Total vendido
+        </div>
+        <p class="num mt-3 text-[30px] font-semibold leading-none">
+          {{ formatPrice(stats.gross) }}
+        </p>
+        <p class="mt-2 text-[13px] text-muted">preço × vendidos (bruto)</p>
+      </article>
+      <article v-if="showVendasMes" class="card p-5">
+        <div class="flex items-center gap-2.5 text-sm text-ink-2">
+          <span class="icon-chip size-8 rounded-lg"><AppIcon name="send" :size="16" /></span>
+          Vendas do mês
+        </div>
+        <p class="num mt-3 text-[30px] font-semibold leading-none">
+          {{ salesStats?.vendasMes ? salesStats.vendasMes.quantidade : loadingSales ? '…' : '—' }}
+        </p>
+        <p class="mt-2 text-[13px] text-muted">
+          <template v-if="salesStats?.vendasMes">
+            {{ formatPrice(salesStats.vendasMes.valorBruto) }} bruto ·
+            {{ formatPrice(salesStats.vendasMes.taxas) }} taxas
+          </template>
+          <template v-else-if="!loadingSales">indisponível agora</template>
+        </p>
+      </article>
+      <article v-if="showVendasMes" class="card p-5">
+        <div class="flex items-center gap-2.5 text-sm text-ink-2">
+          <span class="icon-chip size-8 rounded-lg"><AppIcon name="wallet" :size="16" /></span>
+          Ticket médio
+        </div>
+        <p class="num mt-3 text-[30px] font-semibold leading-none">
+          {{ salesStats?.vendasMes ? formatPrice(salesStats.vendasMes.ticketMedio) : loadingSales ? '…' : '—' }}
+        </p>
+        <p class="mt-2 text-[13px] text-muted">por pedido (mês corrente)</p>
+      </article>
+      <article class="card p-5">
+        <div class="flex items-center gap-2.5 text-sm text-ink-2">
+          <span class="icon-chip size-8 rounded-lg"><AppIcon name="wallet" :size="16" /></span>
+          Total recebido
+        </div>
+        <p class="num mt-3 text-[30px] font-semibold leading-none">
+          {{ salesStats?.recebidoTotal ? formatPrice(salesStats.recebidoTotal.total) : loadingSales ? '…' : '—' }}
+        </p>
+        <p class="mt-2 text-[13px] text-muted">
+          <template v-if="salesStats?.recebidoTotal">
+            {{ formatPrice(salesStats.recebidoTotal.disponivel) }} disponível ·
+            {{ formatPrice(salesStats.recebidoTotal.aLiberar) }} a liberar
+          </template>
+          <template v-else-if="!loadingSales">indisponível agora (Mercado Pago)</template>
+        </p>
+      </article>
+    </div>
+
+    <div v-if="salesError" class="alert alert-bad" role="alert">
+      <AppIcon name="alert" :size="18" />
+      <span>{{ salesError }}</span>
+    </div>
+
     <div v-if="remoteError" class="alert alert-bad" role="alert">
       <AppIcon name="alert" :size="18" />
       <span>{{ remoteError }}</span>
@@ -183,6 +296,7 @@ function onRowError(message: string): void {
               <th>Origem</th>
               <th>Preço</th>
               <th>Estoque</th>
+              <th>Vendidos</th>
               <th>Status</th>
               <th></th>
             </tr>
