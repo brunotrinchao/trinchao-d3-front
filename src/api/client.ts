@@ -15,9 +15,15 @@ client.interceptors.request.use(async (config) => {
   return config
 })
 
-/** URL absoluta de um arquivo servido pelo backend (ex: uploads/<productId>/<file>). */
+/** URL absoluta de uma imagem de produto. Supabase Storage (`products/...`) = URL pública
+ * direta; paths legados (`uploads/...`) = arquivo servido pelo backend. */
 export function assetUrl(path: string): string {
-  return `${API_URL}/${path.replace(/^\/+/, '')}`
+  const clean = path.replace(/^\/+/, '')
+  if (clean.startsWith('products/')) {
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined
+    if (supabaseUrl) return `${supabaseUrl.replace(/\/+$/, '')}/storage/v1/object/public/${clean}`
+  }
+  return `${API_URL}/${clean}`
 }
 
 /** Erro padrão do backend: sempre `{ error }`; 422 (zod) inclui `details`. */
