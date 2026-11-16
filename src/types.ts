@@ -213,6 +213,7 @@ export interface MlListing {
   title: string
   price: number
   availableQuantity: number
+  soldQuantity: number
   status: string
   thumbnail: string | null
   permalink: string | null

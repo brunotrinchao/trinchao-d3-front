@@ -12,6 +12,8 @@ export interface Row {
   title: string
   price: number
   quantity: number
+  /** vendidos (ML sold_quantity; 0 quando sem dado ao vivo) */
+  soldQuantity: number
   statusLabel: string
   statusTone: Tone
   /** status cru do ML — alimenta os botoes de acao (pausar/ativar/encerrar) */
@@ -70,6 +72,7 @@ function localRows(products: Product[], mlLiveById: Map<string, MlListing>): Row
         title: product.title,
         price: live ? live.price : Number(product.price) || 0,
         quantity: live ? live.availableQuantity : product.stock,
+        soldQuantity: live?.soldQuantity ?? 0,
         statusLabel: status.label,
         statusTone: status.tone,
         rawStatus: live?.status ?? null,
@@ -105,6 +108,7 @@ function remoteRows(products: Product[], mlListings: MlListing[]): Row[] {
         title: item.title,
         price: item.price,
         quantity: item.availableQuantity,
+        soldQuantity: item.soldQuantity ?? 0,
         statusLabel: status.label,
         statusTone: status.tone,
         rawStatus: item.status,

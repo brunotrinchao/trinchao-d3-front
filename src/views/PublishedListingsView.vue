@@ -183,6 +183,7 @@ function onRowError(message: string): void {
               <th>Origem</th>
               <th>Preço</th>
               <th>Estoque</th>
+              <th>Vendidos</th>
               <th>Status</th>
               <th></th>
             </tr>

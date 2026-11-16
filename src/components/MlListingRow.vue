@@ -14,6 +14,7 @@ const props = defineProps<{
   title: string
   price: number
   quantity: number
+  soldQuantity: number
   statusLabel: string
   statusTone: string
   /** status cru do ML ('active'|'paused'|'closed'|...) — null quando nao ha item ao vivo pra agir */
@@ -153,6 +154,7 @@ function runFromMenu(action: () => void): void {
       <td><span class="pill pill-neutral">{{ origin === 'local' ? 'App' : 'Direto' }}</span></td>
       <td class="num font-medium">{{ formatPrice(price) }}</td>
       <td><span class="num" :class="quantity === 0 ? 'text-bad-600' : ''">{{ quantity }}</span></td>
+      <td><span class="num" :class="soldQuantity > 0 ? 'text-ok-600 font-medium' : 'text-muted'">{{ soldQuantity }}</span></td>
       <td><span class="pill" :class="statusTone">{{ statusLabel }}</span></td>
       <td class="text-right">
         <div class="flex items-center justify-end gap-1.5">
