@@ -61,7 +61,7 @@ export interface MarketplaceListing {
 export type MlListingTypeId = 'gold_special' | 'gold_pro'
 
 /** Limites da descricao (linhas nao vazias). Espelha DESCRIPTION_LINES do backend. */
-export const DESCRIPTION_LINES = { min: 20, max: 25 } as const
+export const DESCRIPTION_LINES = { max: 25 } as const
 
 export function countDescriptionLines(description: string): number {
   return description.trim().split(/\n+/).filter((line) => line.trim().length > 0).length

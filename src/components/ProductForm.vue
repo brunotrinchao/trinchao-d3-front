@@ -54,10 +54,7 @@ function setNumber(key: NumberField, event: Event): void {
 }
 
 const descriptionLines = computed(() => countDescriptionLines(props.modelValue.description))
-const descriptionLinesOk = computed(
-  () =>
-    descriptionLines.value >= DESCRIPTION_LINES.min && descriptionLines.value <= DESCRIPTION_LINES.max,
-)
+const descriptionLinesOk = computed(() => descriptionLines.value <= DESCRIPTION_LINES.max)
 
 const dimensions: { key: NumberField; label: string; unit: string }[] = [
   { key: 'weightGrams', label: 'Peso', unit: 'g' },
@@ -103,7 +100,7 @@ const dimensions: { key: NumberField; label: string; unit: string }[] = [
         @input="setText('description', $event)"
       />
       <p class="mt-1.5 text-xs" :class="descriptionLinesOk ? 'text-muted' : 'text-bad-600'">
-        {{ descriptionLines }} linha(s) — precisa de {{ DESCRIPTION_LINES.min }} a
+        {{ descriptionLines }} linha(s) — limite de
         {{ DESCRIPTION_LINES.max }} linhas (uma ideia por linha)
       </p>
       <p v-if="generateError" class="mt-1.5 text-xs text-bad-600">{{ generateError }}</p>
