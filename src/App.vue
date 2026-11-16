@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import AppIcon from './components/AppIcon.vue'
 import { API_URL } from './api/client'
 import { fetchAuthStatus } from './api/auth'
 import { supabase } from './lib/supabase'
+import { useNotifications } from './composables/notifications'
 import { MARKETPLACES, MARKETPLACE_LABELS, MARKETPLACE_TONE } from './types'
 import type { Marketplace } from './types'
 
@@ -34,12 +35,23 @@ async function loadAuthStatus(): Promise<void> {
 
 onMounted(loadAuthStatus)
 
+/** Central de notificações: badge na sidebar + polling de 60s (ML live API). */
+const { unreadCount, load, startPolling, stopPolling } = useNotifications()
+const unread = ref(0)
+onMounted(() => {
+  void load().then(() => (unread.value = unreadCount()))
+  startPolling()
+  setInterval(() => (unread.value = unreadCount()), 2000)
+})
+onUnmounted(() => stopPolling())
+
 const crumb = computed(() => {
   if (route.path === '/') return 'Produtos'
   if (route.path === '/products/new') return 'Novo produto'
   if (route.path === '/publicados' || route.path === '/anuncios') return 'Publicados'
   if (route.path === '/vendas') return 'Vendas'
   if (route.path === '/perguntas') return 'Perguntas'
+  if (route.path === '/notificacoes') return 'Notificações'
   if (route.path === '/configuracoes') return 'Configurações'
   return 'Editar produto'
 })
@@ -96,6 +108,15 @@ const marketplaceTone = MARKETPLACE_TONE
           <RouterLink to="/perguntas" class="nav-link">
             <AppIcon name="search" class="nav-ico text-muted" />
             Perguntas
+          </RouterLink>
+          <RouterLink to="/notificacoes" class="nav-link">
+            <AppIcon name="alert" class="nav-ico text-muted" />
+            <span class="flex-1">Notificações</span>
+            <span
+              v-if="unread > 0"
+              class="num rounded-full bg-brand-500 px-1.5 py-0.5 text-[11px] font-semibold text-white"
+              >{{ unread }}</span
+            >
           </RouterLink>
           <RouterLink to="/configuracoes" class="nav-link">
             <AppIcon name="more" class="nav-ico text-muted" />

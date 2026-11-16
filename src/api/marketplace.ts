@@ -1,5 +1,13 @@
 import { client } from './client'
-import type { MlFee, MlOrder, MlQuestion, MlSalesStats, MlShipmentDetail, MlShippingQuote } from '../types'
+import type {
+  MlFee,
+  MlNotification,
+  MlOrder,
+  MlQuestion,
+  MlSalesStats,
+  MlShipmentDetail,
+  MlShippingQuote,
+} from '../types'
 
 /** Comissão real do ML pra preço+categoria+tipo de anúncio (valor exato da API, não estimativa). */
 export async function getMlFee(
@@ -70,4 +78,10 @@ export async function suggestMlAnswer(questionId: string, itemId: string, questi
     { itemId, question },
   )
   return data.text
+}
+
+/** Notificações dos últimos 30 dias (derivação da Orders API). */
+export async function getMlNotifications(): Promise<MlNotification[]> {
+  const { data } = await client.get<MlNotification[]>('/api/marketplace/mercadolivre/notifications')
+  return data
 }

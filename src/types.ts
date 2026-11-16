@@ -169,6 +169,16 @@ export interface MlQuestion {
   produto: { id: string; titulo: string; thumbnail: string | null } | null
 }
 
+/** Notificação de evento (DTO de GET /api/marketplace/mercadolivre/notifications). */
+export interface MlNotification {
+  id: string
+  type: 'venda' | 'enviado' | 'entregue' | 'atraso' | 'cancelado'
+  title: string
+  body: string
+  date: string
+  orderId: string
+}
+
 /** Cotação de envio ME2 por cobertura (resposta real de shipping_options/free).
  * listCost = custo cheio que o vendedor paga; discount = subsídio do ML. */
 export interface MlShippingQuote {
