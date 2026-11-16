@@ -39,9 +39,10 @@ export const router = createRouter({
       component: () => import('../views/QuestionsView.vue'),
     },
     {
-      path: '/configuracoes',
+      path: '/configuracoes/:secao?',
       name: 'settings',
       component: () => import('../views/SettingsView.vue'),
+      props: (route) => ({ secao: String(route.params.secao ?? 'afiliado') }),
     },
     // compat: link antigo do painel de anúncios
     { path: '/anuncios', redirect: { name: 'published-listings' } },

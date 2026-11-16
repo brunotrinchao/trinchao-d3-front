@@ -67,17 +67,11 @@ onMounted(load)
 
 <template>
   <section class="mx-auto grid max-w-4xl gap-6">
-    <header class="flex items-end justify-between gap-4">
-      <div>
-        <h1 class="page-title">Perguntas</h1>
-        <p class="page-sub">Não respondidas — responda direto da app, sem abrir o painel do ML</p>
-      </div>
-      <button class="btn btn-secondary" :disabled="loading" @click="load">
-        <AppIcon name="sync" :size="14" />
-        Atualizar
-      </button>
-    </header>
 
+    <button v-if="!loading && !error" class="btn btn-sm btn-ghost justify-self-end" @click="load">
+      <AppIcon name="sync" :size="13" />
+      Atualizar
+    </button>
     <div v-if="error" class="alert alert-bad" role="alert">
       <AppIcon name="alert" :size="18" />
       <span>{{ error }}</span>

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { onMounted, ref, watch } from 'vue'
-import { getMlOrderShipment, getMlOrders } from '../api/marketplace'
+import { downloadMlOrderLabel, getMlOrderShipment, getMlOrders } from '../api/marketplace'
 import { apiErrorMessage } from '../api/client'
 import AppIcon from '../components/AppIcon.vue'
 import type { MlOrder, MlShipmentDetail } from '../types'
@@ -139,6 +139,19 @@ function formatPrice(value: number): string {
   return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 }
 
+const labelBusy = ref<string | null>(null)
+async function downloadLabel(orderId: string): Promise<void> {
+  if (labelBusy.value) return
+  labelBusy.value = orderId
+  try {
+    await downloadMlOrderLabel(orderId)
+  } catch (e) {
+    shipmentErrors.value.set(orderId, apiErrorMessage(e))
+  } finally {
+    labelBusy.value = null
+  }
+}
+
 const copied = ref<string | null>(null)
 async function copyTracking(code: string): Promise<void> {
   try {
@@ -155,11 +168,11 @@ onMounted(load)
 
 <template>
   <section class="mx-auto grid max-w-6xl gap-6">
-    <header>
-      <h1 class="page-title">Vendas</h1>
-      <p class="page-sub">Pedidos do Mercado Livre ao vivo da API — dados de entrega e rastreio</p>
-    </header>
 
+    <button v-if="!loading && !error" class="btn btn-sm btn-ghost justify-self-end" @click="load">
+      <AppIcon name="sync" :size="13" />
+      Atualizar
+    </button>
     <div v-if="error" class="alert alert-bad" role="alert">
       <AppIcon name="alert" :size="18" />
       <span>{{ error }}</span>
@@ -290,6 +303,16 @@ onMounted(load)
                     </dd>
                   </div>
                 </dl>
+                <div class="mt-3 flex items-center gap-2">
+                  <button
+                    class="btn btn-sm btn-secondary"
+                    :disabled="labelBusy === o.id"
+                    @click.stop="downloadLabel(o.id)"
+                  >
+                    <AppIcon name="up" :size="13" />
+                    {{ labelBusy === o.id ? 'Baixando…' : 'Baixar etiqueta (PDF)' }}
+                  </button>
+                </div>
               </td>
             </tr>
           </template>

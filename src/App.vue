@@ -101,6 +101,23 @@ const marketplaceTone = MARKETPLACE_TONE
             <AppIcon name="more" class="nav-ico text-muted" />
             Configurações
           </RouterLink>
+          <!-- Sub-menu da sessão Configurações -->
+          <div class="ml-6 grid gap-0.5 border-l border-line pl-3">
+            <RouterLink
+              to="/configuracoes/afiliado"
+              class="rounded-lg px-2 py-1.5 text-[13px] transition-colors"
+              :class="route.path.startsWith('/configuracoes') ? 'text-ink-2 hover:bg-panel' : 'text-muted'"
+              :aria-current="route.path === '/configuracoes/afiliado' ? 'page' : undefined"
+            >
+              Afiliado ML
+            </RouterLink>
+            <span class="cursor-not-allowed rounded-lg px-2 py-1.5 text-[13px] text-faint" title="Em breve">
+              Conta ML
+            </span>
+            <span class="cursor-not-allowed rounded-lg px-2 py-1.5 text-[13px] text-faint" title="Em breve">
+              Shopee
+            </span>
+          </div>
         </nav>
 
         <div class="mt-auto hidden rounded-2xl border border-line bg-white p-3 shadow-card lg:block">

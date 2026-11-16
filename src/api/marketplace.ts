@@ -85,3 +85,17 @@ export async function getMlNotifications(): Promise<MlNotification[]> {
   const { data } = await client.get<MlNotification[]>('/api/marketplace/mercadolivre/notifications')
   return data
 }
+
+/** Baixa a etiqueta de envio do pedido (PDF) via blob autenticado. */
+export async function downloadMlOrderLabel(orderId: string): Promise<void> {
+  const { data } = await client.get<Blob>(
+    `/api/marketplace/mercadolivre/orders/${orderId}/label`,
+    { responseType: 'blob' },
+  )
+  const url = URL.createObjectURL(data)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `etiqueta-${orderId}.pdf`
+  a.click()
+  URL.revokeObjectURL(url)
+}
