@@ -94,6 +94,7 @@ function toInput(detail: ProductDetail): ProductInput {
     heightCm: detail.heightCm,
     widthCm: detail.widthCm,
     lengthCm: detail.lengthCm,
+    affiliateTag: detail.affiliateTag ?? null,
   }
 }
 

@@ -14,6 +14,7 @@ const props = defineProps<{
   title: string
   price: number
   quantity: number
+  soldQuantity: number
   statusLabel: string
   statusTone: string
   /** status cru do ML ('active'|'paused'|'closed'|...) — null quando nao ha item ao vivo pra agir */
@@ -113,6 +114,12 @@ function toggleMenu(): void {
   menuOpen.value = !menuOpen.value
 }
 
+async function copyLink(): Promise<void> {
+  if (!props.permalink) return
+  await navigator.clipboard.writeText(props.permalink)
+  menuOpen.value = false
+}
+
 function closeMenu(): void {
   menuOpen.value = false
 }
@@ -153,6 +160,7 @@ function runFromMenu(action: () => void): void {
       <td><span class="pill pill-neutral">{{ origin === 'local' ? 'App' : 'Direto' }}</span></td>
       <td class="num font-medium">{{ formatPrice(price) }}</td>
       <td><span class="num" :class="quantity === 0 ? 'text-bad-600' : ''">{{ quantity }}</span></td>
+      <td><span class="num" :class="soldQuantity > 0 ? 'text-ok-600 font-medium' : 'text-muted'">{{ soldQuantity }}</span></td>
       <td><span class="pill" :class="statusTone">{{ statusLabel }}</span></td>
       <td class="text-right">
         <div class="flex items-center justify-end gap-1.5">
@@ -208,6 +216,15 @@ function runFromMenu(action: () => void): void {
               >
                 <AppIcon name="edit" :size="14" />
                 Editar no ML
+              </button>
+              <button
+                v-if="permalink"
+                type="button"
+                class="menu-item"
+                @click="copyLink"
+              >
+                <AppIcon name="link" :size="14" />
+                Copiar link de afiliado
               </button>
               <button
                 v-if="rawStatus === 'active'"

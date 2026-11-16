@@ -43,7 +43,7 @@ async function onGenerateDescription(): Promise<void> {
   }
 }
 
-function setText(key: 'title' | 'description', event: Event): void {
+function setText(key: 'title' | 'description' | 'affiliateTag', event: Event): void {
   set(key, (event.target as HTMLInputElement | HTMLTextAreaElement).value)
 }
 
@@ -104,6 +104,18 @@ const dimensions: { key: NumberField; label: string; unit: string }[] = [
         {{ DESCRIPTION_LINES.max }} linhas (uma ideia por linha)
       </p>
       <p v-if="generateError" class="mt-1.5 text-xs text-bad-600">{{ generateError }}</p>
+    </label>
+
+    <label class="block">
+      <span class="label">Tag de afiliado (ML)</span>
+      <input
+        class="input"
+        :disabled="props.disabled"
+        :value="props.modelValue.affiliateTag ?? ''"
+        placeholder="Ex: meunick ou matt:user:123"
+        @input="setText('affiliateTag', $event)"
+      />
+      <p class="mt-1 text-xs text-muted">Usada pra gerar link de afiliado no formato ?tag=X ou ?matt_word=X&matt_tool=Y</p>
     </label>
 
     <div class="grid gap-5 sm:grid-cols-2">
