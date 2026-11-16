@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { onMounted, reactive, ref } from 'vue'
-import { answerMlQuestion, getMlQuestions } from '../api/marketplace'
+import { answerMlQuestion, getMlQuestions, suggestMlAnswer } from '../api/marketplace'
 import { apiErrorMessage } from '../api/client'
 import AppIcon from '../components/AppIcon.vue'
 import type { MlQuestion } from '../types'
@@ -10,9 +10,24 @@ const loading = ref(true)
 const error = ref<string | null>(null)
 
 const sending = reactive(new Set<string>())
+const suggesting = reactive(new Set<string>())
 const answers = ref<Record<string, string>>({})
 const errors = reactive(new Map<string, string>())
 const answeredIds = reactive(new Set<string>())
+
+/** Rascunho IA — só preenche o campo; o vendedor edita antes de enviar. */
+async function suggest(q: MlQuestion): Promise<void> {
+  if (suggesting.has(q.id)) return
+  suggesting.add(q.id)
+  errors.delete(q.id)
+  try {
+    answers.value[q.id] = await suggestMlAnswer(q.id, q.itemId, q.texto)
+  } catch (e) {
+    errors.set(q.id, apiErrorMessage(e))
+  } finally {
+    suggesting.delete(q.id)
+  }
+}
 
 async function load(): Promise<void> {
   loading.value = true
@@ -101,7 +116,17 @@ onMounted(load)
       <p class="rounded-xl bg-panel px-4 py-3 text-sm text-ink-2">{{ q.texto }}</p>
 
       <label class="grid gap-1.5">
-        <span class="text-sm font-medium text-ink-2">Sua resposta</span>
+        <span class="flex items-center justify-between gap-2 text-sm">
+          <span class="font-medium text-ink-2">Sua resposta</span>
+          <button
+            class="btn btn-sm btn-ghost"
+            :disabled="suggesting.has(q.id)"
+            @click="suggest(q)"
+          >
+            <AppIcon name="edit" :size="13" />
+            {{ suggesting.has(q.id) ? 'Gerando…' : 'Sugerir com IA' }}
+          </button>
+        </span>
         <textarea
           v-model="answers[q.id]"
           class="input"

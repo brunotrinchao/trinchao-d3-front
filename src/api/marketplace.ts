@@ -62,3 +62,12 @@ export async function getMlQuestions(): Promise<MlQuestion[]> {
 export async function answerMlQuestion(questionId: string, text: string): Promise<void> {
   await client.post(`/api/marketplace/mercadolivre/questions/${questionId}/answer`, { text })
 }
+
+/** Rascunho de resposta IA (Gemini, contexto do Product local). Só rascunho. */
+export async function suggestMlAnswer(questionId: string, itemId: string, question: string): Promise<string> {
+  const { data } = await client.post<{ text: string }>(
+    `/api/marketplace/mercadolivre/questions/${questionId}/suggest`,
+    { itemId, question },
+  )
+  return data.text
+}
