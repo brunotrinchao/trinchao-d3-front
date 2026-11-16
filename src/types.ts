@@ -134,6 +134,8 @@ export interface MlOrder {
     precoUnitario: number
     variacao?: string
     sku?: string
+    anuncioId?: string
+    thumbnail: string | null
   }[]
   total: number
   taxa: number

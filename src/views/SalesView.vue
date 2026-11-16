@@ -106,18 +106,29 @@ const shippingTone = (o: MlOrder): string => {
   if (s === 'cancelled') return 'pill-bad'
   return 'pill-neutral'
 }
+
+/** Status/substatus do envio ML → PT-BR. Fallback: valor cru. */
+const SHIPPING_STATUS_PT: Record<string, string> = {
+  pending: 'Pendente',
+  handling: 'Preparando',
+  ready_to_ship: 'Pronto p/ enviar',
+  ready_to_print: 'Pronto p/ imprimir',
+  printed: 'Etiqueta impressa',
+  shipped: 'Enviado',
+  in_transit: 'Em trânsito',
+  delivered: 'Entregue',
+  not_delivered: 'Não entregue',
+  cancelled: 'Cancelado',
+  to_be_agreed: 'A combinar',
+  stale: 'Sem movimentação',
+  delayed: 'Atrasado',
+  lost: 'Extraviado',
+}
 const shippingLabel = (o: MlOrder): string => {
   const s = o.envio?.status ?? ''
-  const labels: Record<string, string> = {
-    delivered: 'Entregue',
-    shipped: 'Enviado',
-    ready_to_ship: 'Pronto p/ enviar',
-    handling: 'Preparando',
-    cancelled: 'Cancelado',
-    to_be_agreed: 'A combinar',
-  }
-  return labels[s] ?? (o.envio ? s : '—')
+  return SHIPPING_STATUS_PT[s] ?? (o.envio ? s : '—')
 }
+const shipmentStatusPt = (s: string): string => SHIPPING_STATUS_PT[s] ?? s
 
 function formatDate(iso: string): string {
   if (!iso) return '—'
@@ -196,10 +207,22 @@ onMounted(load)
                 <p class="text-[12px] text-muted">{{ o.comprador.nickname }}</p>
               </td>
               <td class="px-4 py-3 align-top">
-                <p v-for="item in o.itens" :key="`${o.id}-${item.titulo}-${item.sku ?? ''}`">
-                  <span class="num">{{ item.quantidade }}×</span> {{ item.titulo }}
-                  <span v-if="item.variacao" class="text-[12px] text-muted">· {{ item.variacao }}</span>
-                </p>
+                <div v-for="item in o.itens" :key="`${o.id}-${item.titulo}-${item.sku ?? ''}`" class="mb-1 flex items-start gap-2 last:mb-0">
+                  <img
+                    v-if="item.thumbnail"
+                    :src="item.thumbnail"
+                    :alt="item.titulo"
+                    class="size-10 shrink-0 rounded-lg border border-line object-cover"
+                    loading="lazy"
+                  />
+                  <span v-else class="grid size-10 shrink-0 place-items-center rounded-lg border border-line bg-panel text-faint">
+                    <AppIcon name="box" :size="16" />
+                  </span>
+                  <span>
+                    <span class="num">{{ item.quantidade }}×</span> {{ item.titulo }}
+                    <span v-if="item.variacao" class="block text-[12px] text-muted">{{ item.variacao }}</span>
+                  </span>
+                </div>
               </td>
               <td class="num whitespace-nowrap px-4 py-3 align-top">{{ formatPrice(o.total) }}</td>
               <td class="px-4 py-3 align-top">
@@ -245,9 +268,9 @@ onMounted(load)
                   <div>
                     <dt class="text-[12px] text-muted">Status do envio</dt>
                     <dd class="mt-0.5">
-                      {{ shipments.get(o.id)!.envio!.status
+                      {{ shipmentStatusPt(shipments.get(o.id)!.envio!.status)
                       }}<template v-if="shipments.get(o.id)!.envio!.substatus">
-                        · {{ shipments.get(o.id)!.envio!.substatus }}</template
+                        · {{ shipmentStatusPt(shipments.get(o.id)!.envio!.substatus) }}</template
                       >
                     </dd>
                   </div>
