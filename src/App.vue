@@ -45,7 +45,12 @@ const marketplaceTone = MARKETPLACE_TONE
 </script>
 
 <template>
-  <div class="min-h-screen lg:p-4">
+  <!-- Login: página única, sem sidebar/header -->
+  <div v-if="route.name === 'login'" class="min-h-screen bg-panel">
+    <RouterView />
+  </div>
+
+  <div v-else class="min-h-screen lg:p-4">
     <div
       class="mx-auto flex min-h-screen max-w-[1480px] flex-col overflow-hidden bg-panel lg:h-[calc(100vh-2rem)] lg:min-h-0 lg:flex-row lg:rounded-[28px] lg:border lg:border-white/70 lg:shadow-pop"
     >

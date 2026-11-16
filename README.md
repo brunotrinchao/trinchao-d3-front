@@ -40,3 +40,4 @@ src/
   views/      telas de lista, criação e edição
   types.ts    tipos espelhando o schema Prisma do contrato
 ```
+# trinchao-d3-front
