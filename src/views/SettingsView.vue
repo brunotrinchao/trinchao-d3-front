@@ -149,6 +149,12 @@ async function save(): Promise<void> {
                 <code class="num">matt_tool</code>, o formato é o 2
               </li>
               <li>Se o link contiver apenas <code class="num">tag</code>, o formato é o 1</li>
+          <li>
+            O parâmetro <code class="num">ref</code> do link social é um token gerado pelo painel —
+            identifica o produto e não pode ser reutilizado. Por isso a app anexa
+            <code class="num">matt_word</code>/<code class="num">matt_tool</code> direto no
+            permalink do produto
+          </li>
             </ol>
           </div>
 
