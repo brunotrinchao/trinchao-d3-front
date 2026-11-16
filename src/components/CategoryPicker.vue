@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { computed, reactive, ref, watch } from 'vue'
-import { fetchRequiredCategoryAttributes, searchCategories } from '../api/categories'
+import { computed, onMounted, reactive, ref, watch } from 'vue'
+import { fetchCategoryChildren, fetchRequiredCategoryAttributes, searchCategories } from '../api/categories'
 import { API_URL, apiErrorMessage, apiErrorStatus } from '../api/client'
 import AppIcon from './AppIcon.vue'
 import { MARKETPLACE_LABELS } from '../types'
+import type { CategoryNode } from '../api/categories'
 import type { CategorySearchResult, Marketplace, MlCategoryAttribute, ProductCategoryMap } from '../types'
 
 const props = defineProps<{
@@ -16,16 +17,79 @@ const emit = defineEmits<{
   'save-attributes': [Record<string, string>]
 }>()
 
+// ===== Explorar (navegação hierárquica, só ML) =====
+const mode = ref<'search' | 'explore'>(props.marketplace === 'mercadolivre' ? 'explore' : 'search')
+const trail = ref<{ id: string; name: string }[]>([])
+const nodes = ref<CategoryNode[]>([])
+const exploring = ref(false)
+const exploreError = ref<string | null>(null)
+
+async function loadChildren(categoryId: string | null, trailEntry: { id: string; name: string } | null, truncateTo?: string): Promise<void> {
+  exploring.value = true
+  exploreError.value = null
+  try {
+    if (truncateTo) {
+      // clique no breadcrumb: trunca trail até a entrada clicada
+      const idx = trail.value.findIndex((t) => t.id === truncateTo)
+      trail.value = idx >= 0 ? trail.value.slice(0, idx + 1) : []
+    } else if (trailEntry) {
+      trail.value = [...trail.value, trailEntry]
+    } else {
+      trail.value = []
+    }
+    const list = categoryId
+      ? await fetchCategoryChildren(categoryId)
+      : (await searchCategories(props.marketplace, '')).map((r) => ({
+          id: r.id,
+          name: r.path,
+          hasChildren: true,
+        }))
+    nodes.value = list.map((node) => ({
+      ...node,
+      hasChildren: 'hasChildren' in node ? node.hasChildren : true,
+    }))
+  } catch (e) {
+    exploreError.value = apiErrorMessage(e)
+    nodes.value = []
+  } finally {
+    exploring.value = false
+  }
+}
+
+async function chooseNode(node: CategoryNode): Promise<void> {
+  exploring.value = true
+  try {
+    const children = await fetchCategoryChildren(node.id)
+    if (children.length > 0) {
+      await loadChildren(node.id, { id: node.id, name: node.name })
+      nodes.value = children
+    } else {
+      // folha: seleciona
+      const path = [...trail.value.map((t) => t.name), node.name].join(' > ')
+      emit('select', { id: node.id, path })
+      nodes.value = []
+      trail.value = []
+    }
+  } catch (e) {
+    exploreError.value = apiErrorMessage(e)
+  } finally {
+    exploring.value = false
+  }
+}
+
+const authUrl = computed(() => `${API_URL}/api/auth/${props.marketplace}`)
+
+onMounted(() => {
+  if (props.marketplace === 'mercadolivre') loadChildren(null, null)
+})
+
+// ===== Busca textual =====
 const query = ref('')
 const results = ref<CategorySearchResult[]>([])
 const searching = ref(false)
 const error = ref<string | null>(null)
-// A taxonomia dos dois marketplaces exige OAuth: ML recusa chamada anônima (401/403)
-// e a Shopee responde 501 enquanto não há credencial salva.
 const needsAuth = ref(false)
 let timer: ReturnType<typeof setTimeout> | undefined
-
-const authUrl = computed(() => `${API_URL}/api/auth/${props.marketplace}`)
 
 async function run(): Promise<void> {
   const q = query.value.trim()
@@ -99,6 +163,58 @@ function saveAttributes(): void {
       <span v-if="searching" class="text-xs text-muted">buscando…</span>
     </div>
 
+    <!-- ML: navegação hierárquica ou busca textual -->
+    <div v-if="props.marketplace === 'mercadolivre'" class="flex gap-1 text-xs">
+      <button
+        type="button"
+        class="rounded-md px-2 py-1 transition"
+        :class="mode === 'explore' ? 'bg-brand-100 font-semibold text-brand-800' : 'text-muted hover:text-ink'"
+        @click="mode = 'explore'"
+      >
+        Explorar
+      </button>
+      <button
+        type="button"
+        class="rounded-md px-2 py-1 transition"
+        :class="mode === 'search' ? 'bg-brand-100 font-semibold text-brand-800' : 'text-muted hover:text-ink'"
+        @click="mode = 'search'"
+      >
+        Buscar
+      </button>
+    </div>
+
+    <!-- Explorar: trilha + subcategorias -->
+    <div v-if="mode === 'explore' && props.marketplace === 'mercadolivre'" class="grid gap-2">
+      <div v-if="trail.length > 0" class="flex flex-wrap items-center gap-1 text-xs text-muted">
+        <button type="button" class="underline hover:text-ink" @click="loadChildren(null, null)">Início</button>
+        <template v-for="t in trail" :key="t.id">
+          <span>›</span>
+          <button
+            type="button"
+            class="underline hover:text-ink"
+            @click="loadChildren(t.id, null, t.id)"
+          >
+            {{ t.name }}
+          </button>
+        </template>
+      </div>
+      <p v-if="exploreError" class="text-xs text-bad-600">{{ exploreError }}</p>
+      <p v-else-if="exploring" class="text-xs text-muted">carregando…</p>
+      <ul v-else-if="nodes.length > 0" class="max-h-48 divide-y divide-line overflow-y-auto rounded-xl border border-line bg-white shadow-card">
+        <li v-for="node in nodes" :key="node.id">
+          <button
+            type="button"
+            class="w-full cursor-pointer px-3 py-2 text-left text-[13px] transition hover:bg-brand-50 disabled:opacity-50"
+            :disabled="props.busy || exploring"
+            @click="chooseNode(node)"
+          >
+            {{ node.name }}
+            <span class="num text-xs text-muted">· {{ node.id }}</span>
+          </button>
+        </li>
+      </ul>
+    </div>
+
     <p
       class="rounded-lg border border-line bg-white px-3 py-2 text-[13px]"
       :class="props.current ? 'text-ink' : 'text-faint'"
@@ -110,7 +226,7 @@ function saveAttributes(): void {
       <template v-else>Nenhuma categoria selecionada</template>
     </p>
 
-    <div class="adorn adorn-start">
+    <div v-if="mode === 'search' || props.marketplace !== 'mercadolivre'" class="adorn adorn-start">
       <span class="adorn-start-el"><AppIcon name="search" :size="14" /></span>
       <input
         v-model="query"
@@ -122,13 +238,15 @@ function saveAttributes(): void {
       />
     </div>
 
-    <p v-if="needsAuth" class="alert alert-warn !px-3 !py-2 text-xs">
-      <span>
-        Conecte a conta {{ MARKETPLACE_LABELS[props.marketplace] }} para buscar categorias.
-        <a :href="authUrl" class="font-semibold underline">Conectar agora</a>
-      </span>
-    </p>
-    <p v-else-if="error" class="text-xs text-bad-600">{{ error }}</p>
+    <template v-if="mode === 'search' || props.marketplace !== 'mercadolivre'">
+      <p v-if="needsAuth" class="alert alert-warn !px-3 !py-2 text-xs">
+        <span>
+          Conecte a conta {{ MARKETPLACE_LABELS[props.marketplace] }} para buscar categorias.
+          <a :href="authUrl" class="font-semibold underline">Conectar agora</a>
+        </span>
+      </p>
+      <p v-else-if="error" class="text-xs text-bad-600">{{ error }}</p>
+    </template>
 
     <ul
       v-if="results.length > 0"

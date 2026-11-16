@@ -32,3 +32,15 @@ export async function fetchRequiredCategoryAttributes(categoryId: string): Promi
   })
   return Array.isArray(data) ? data : []
 }
+
+/** Navegação hierárquica (ML): subcategorias de uma categoria. */
+export interface CategoryNode {
+  id: string
+  name: string
+  hasChildren: boolean
+}
+
+export async function fetchCategoryChildren(categoryId: string): Promise<CategoryNode[]> {
+  const { data } = await client.get<CategoryNode[]>(`/api/categories/mercadolivre/${categoryId}`)
+  return Array.isArray(data) ? data : []
+}

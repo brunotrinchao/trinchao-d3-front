@@ -3,6 +3,7 @@ import { computed, nextTick, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useProductsStore } from '../stores/products'
 import * as api from '../api/products'
+import { fetchRequiredCategoryAttributes } from '../api/categories'
 import { apiErrorMessage } from '../api/client'
 import ProductForm from '../components/ProductForm.vue'
 import ImageUploader from '../components/ImageUploader.vue'
@@ -185,6 +186,31 @@ function onSelectCategory(marketplace: Marketplace, category: CategorySearchResu
       }),
     `Categoria de ${MARKETPLACE_LABELS[marketplace]} salva.`,
   )
+  // Só ML: atributos catalog_required da categoria escolhida viram linhas nos Campos
+  // extras (Marca, Material...) — o usuário preenche ali e o publish já encontra.
+  if (marketplace === 'mercadolivre') {
+    void seedRequiredAttributes(props.id, category.id)
+  }
+}
+
+/** Campos catalog_required da categoria que ainda não existem como custom field →
+ * adicionados vazios no editor de Campos extras. Melhor esforço: falha não bloqueia
+ * a seleção de categoria. */
+async function seedRequiredAttributes(productId: string, categoryId: string): Promise<void> {
+  try {
+    const [attributes, current] = await Promise.all([
+      fetchRequiredCategoryAttributes(categoryId),
+      api.getProduct(productId),
+    ])
+    const existingKeys = new Set(current.customFields.map((field) => field.key.trim().toLowerCase()))
+    const missing = attributes.filter((attr) => !existingKeys.has(attr.name.trim().toLowerCase()))
+    if (missing.length === 0) return
+    const fields = [...current.customFields.map(({ key, value }) => ({ key, value })), ...missing.map(({ name }) => ({ key: name, value: '' }))]
+    await api.saveCustomFields(productId, { fields })
+    apply(await api.getProduct(productId))
+  } catch (e) {
+    console.error('seedRequiredAttributes failed:', e)
+  }
 }
 
 function onSaveAttributes(marketplace: Marketplace, attributes: Record<string, string>): void {
