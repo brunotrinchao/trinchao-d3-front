@@ -215,6 +215,7 @@ export interface MlListing {
   availableQuantity: number
   soldQuantity: number
   status: string
+  marketplace: Marketplace
   thumbnail: string | null
   permalink: string | null
   familyId: string | null

@@ -64,10 +64,11 @@ const allGroups = computed<ProductGroup[]>(() =>
 // registrada no PM: frete não entra (não temos o custo real por venda).
 const stats = computed(() => {
   const live = mlListings.value
-  const active = live.filter((l) => l.status === 'active')
-  const sold = live.reduce((sum, l) => sum + (l.soldQuantity ?? 0), 0)
-  const gross = live.reduce((sum, l) => sum + (l.soldQuantity ?? 0) * l.price, 0)
-  const fee = live.reduce(
+  const filtered = marketplaceFilter.value === 'all' ? live : live.filter((l) => l.marketplace === marketplaceFilter.value)
+  const active = filtered.filter((l) => l.status === 'active')
+  const sold = filtered.reduce((sum, l) => sum + (l.soldQuantity ?? 0), 0)
+  const gross = filtered.reduce((sum, l) => sum + (l.soldQuantity ?? 0) * l.price, 0)
+  const fee = filtered.reduce(
     (sum, l) => sum + (l.soldQuantity ?? 0) * l.price * (l.listingTypeId === 'gold_pro' ? 0.14 : 0.11),
     0,
   )
