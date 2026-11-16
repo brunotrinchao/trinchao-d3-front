@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { onMounted, onUnmounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import AppIcon from './components/AppIcon.vue'
 import NotificationsDrawer from './components/NotificationsDrawer.vue'
@@ -43,16 +43,6 @@ onMounted(() => {
   startPolling()
 })
 onUnmounted(() => stopPolling())
-
-const crumb = computed(() => {
-  if (route.path === '/') return 'Produtos'
-  if (route.path === '/products/new') return 'Novo produto'
-  if (route.path === '/publicados' || route.path === '/anuncios') return 'Publicados'
-  if (route.path === '/vendas') return 'Vendas'
-  if (route.path === '/perguntas') return 'Perguntas'
-  if (route.path === '/configuracoes') return 'Configurações'
-  return 'Editar produto'
-})
 
 const marketplaceTone = MARKETPLACE_TONE
 </script>
@@ -165,14 +155,8 @@ const marketplaceTone = MARKETPLACE_TONE
       <!-- Conteúdo -->
       <div class="flex min-w-0 flex-1 flex-col">
         <header
-          class="flex h-16 shrink-0 items-center justify-between gap-3 border-b border-line bg-white/60 px-4 backdrop-blur sm:px-8"
+          class="flex h-16 shrink-0 items-center justify-end gap-3 border-b border-line bg-white/60 px-4 backdrop-blur sm:px-8"
         >
-          <div class="flex items-center gap-2 text-sm text-muted">
-            <AppIcon name="store" :size="16" />
-            <span>Anúncios</span>
-            <span class="text-faint">/</span>
-            <span class="font-medium text-ink">{{ crumb }}</span>
-          </div>
           <div class="flex items-center gap-2">
             <!-- Sino de notificações (abre drawer) -->
             <button
