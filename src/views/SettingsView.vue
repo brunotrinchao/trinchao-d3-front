@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { getAffiliateTag, putAffiliateTag } from '../api/settings'
-import { buildAffiliateLink, validateAffiliateTag } from '../lib/affiliate'
+import { buildAffiliateLink, extractAffiliateTag, validateAffiliateTag } from '../lib/affiliate'
 import { apiErrorMessage } from '../api/client'
 import AppIcon from '../components/AppIcon.vue'
 
@@ -17,6 +17,14 @@ onMounted(async () => {
     error.value = apiErrorMessage(e)
   } finally {
     loading.value = false
+  }
+})
+
+/** Colou um link de afiliado completo? Extrai a tag na hora (matt: ou tag=). */
+watch(tag, (value) => {
+  if (value.includes('://')) {
+    const extracted = extractAffiliateTag(value)
+    if (extracted) tag.value = extracted
   }
 })
 
@@ -94,12 +102,12 @@ async function save(): Promise<void> {
             >
           </li>
           <li>Faça login com sua conta de afiliado</li>
-          <li>Gere um link de afiliado para qualquer produto</li>
+          <li>Gere um link de afiliado para qualquer produto e cole no campo abaixo — a app extrai a tag sozinha</li>
           <li>
             Se o link contiver <code class="num">matt_word</code> e
-            <code class="num">matt_tool</code>, use o formato 2
+            <code class="num">matt_tool</code>, o formato é o 2
           </li>
-          <li>Se o link contiver apenas <code class="num">tag</code>, use o formato 1</li>
+          <li>Se o link contiver apenas <code class="num">tag</code>, o formato é o 1</li>
         </ol>
       </div>
 
@@ -113,7 +121,7 @@ async function save(): Promise<void> {
         <input
           v-model="tag"
           class="input"
-          placeholder="SEUNOME-20 ou matt:usuario:78793736"
+          placeholder="Cole seu link de afiliado ou digite matt:usuario:78793736"
           spellcheck="false"
         />
         <span class="text-[12px] text-muted">

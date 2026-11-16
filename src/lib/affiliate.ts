@@ -11,6 +11,23 @@ export function validateAffiliateTag(tag: string): { formato: AffiliateTagFormat
   return { formato: null }
 }
 
+/** Extrai a tag de afiliado de um link gerado pelo programa de afiliados
+ * (ex: /social/usuario?matt_word=X&matt_tool=Y&ref=... ou ?tag=SEUNOME-20).
+ * ref/forceInApp são tracking dinâmico — não entram. Sem dados → null. */
+export function extractAffiliateTag(link: string): string | null {
+  try {
+    const url = new URL(link)
+    const mattWord = url.searchParams.get('matt_word')
+    const mattTool = url.searchParams.get('matt_tool')
+    if (mattWord && mattTool) return `matt:${mattWord}:${mattTool}`
+    const tag = url.searchParams.get('tag')
+    if (tag) return tag
+    return null
+  } catch {
+    return null
+  }
+}
+
 export function buildAffiliateLink(productUrl: string, tag: string): string {
   if (!tag) return productUrl
   try {

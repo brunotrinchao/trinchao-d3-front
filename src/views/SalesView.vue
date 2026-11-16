@@ -128,7 +128,7 @@ const shippingLabel = (o: MlOrder): string => {
   const s = o.envio?.status ?? ''
   return SHIPPING_STATUS_PT[s] ?? (o.envio ? s : '—')
 }
-const shipmentStatusPt = (s: string): string => SHIPPING_STATUS_PT[s] ?? s
+const shipmentStatusPt = (s: string | undefined): string => (s ? (SHIPPING_STATUS_PT[s] ?? s) : '')
 
 function formatDate(iso: string): string {
   if (!iso) return '—'
