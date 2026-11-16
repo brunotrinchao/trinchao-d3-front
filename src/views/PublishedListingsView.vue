@@ -57,6 +57,27 @@ const allGroups = computed<ProductGroup[]>(() =>
 
 /** Publicados = produtos com ≥1 listing published (fechado/excluído deixa de contar e
  * o produto volta pra lista de rascunhos). Anúncios remotos entram direto. */
+
+// ===== Stats (dados ao vivo do ML) =====
+// "Total recebido" = vendido − comissão estimada (gold_special ~11%, gold_pro ~14%).
+// Estimativa consciente: comissão exata exige fee por item (N chamadas); decisão
+// registrada no PM: frete não entra (não temos o custo real por venda).
+const stats = computed(() => {
+  const live = mlListings.value
+  const active = live.filter((l) => l.status === 'active')
+  const sold = live.reduce((sum, l) => sum + (l.soldQuantity ?? 0), 0)
+  const gross = live.reduce((sum, l) => sum + (l.soldQuantity ?? 0) * l.price, 0)
+  const fee = live.reduce(
+    (sum, l) => sum + (l.soldQuantity ?? 0) * l.price * (l.listingTypeId === 'gold_pro' ? 0.14 : 0.11),
+    0,
+  )
+  return {
+    activeCount: active.length,
+    sold,
+    gross,
+    net: gross - fee,
+  }
+})
 const visibleGroups = computed<ProductGroup[]>(() =>
   allGroups.value.filter((group) => {
     if (group.productId === null) return true
@@ -145,6 +166,46 @@ function onRowError(message: string): void {
         com o catálogo
       </p>
     </header>
+
+    <!-- Stats (dados ao vivo do ML) -->
+    <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <article class="card p-5">
+        <div class="flex items-center gap-2.5 text-sm text-ink-2">
+          <span class="icon-chip size-8 rounded-lg"><AppIcon name="send" :size="16" /></span>
+          Ativos
+        </div>
+        <p class="num mt-3 text-[30px] font-semibold leading-none">{{ stats.activeCount }}</p>
+        <p class="mt-2 text-[13px] text-muted">anúncios publicados ativos</p>
+      </article>
+      <article class="card p-5">
+        <div class="flex items-center gap-2.5 text-sm text-ink-2">
+          <span class="icon-chip size-8 rounded-lg"><AppIcon name="wallet" :size="16" /></span>
+          Vendidos
+        </div>
+        <p class="num mt-3 text-[30px] font-semibold leading-none">{{ stats.sold }}</p>
+        <p class="mt-2 text-[13px] text-muted">unidades vendidas</p>
+      </article>
+      <article class="card p-5">
+        <div class="flex items-center gap-2.5 text-sm text-ink-2">
+          <span class="icon-chip size-8 rounded-lg"><AppIcon name="wallet" :size="16" /></span>
+          Total vendido
+        </div>
+        <p class="num mt-3 text-[30px] font-semibold leading-none">
+          {{ formatPrice(stats.gross) }}
+        </p>
+        <p class="mt-2 text-[13px] text-muted">preço × vendidos (bruto)</p>
+      </article>
+      <article class="card p-5">
+        <div class="flex items-center gap-2.5 text-sm text-ink-2">
+          <span class="icon-chip size-8 rounded-lg"><AppIcon name="wallet" :size="16" /></span>
+          Total recebido
+        </div>
+        <p class="num mt-3 text-[30px] font-semibold leading-none">
+          ~ {{ formatPrice(stats.net) }}
+        </p>
+        <p class="mt-2 text-[13px] text-muted">estimativa após comissão ML (gold ~11% / pro ~14%)</p>
+      </article>
+    </div>
 
     <div v-if="remoteError" class="alert alert-bad" role="alert">
       <AppIcon name="alert" :size="18" />
