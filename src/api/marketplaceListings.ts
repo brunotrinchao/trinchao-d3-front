@@ -1,5 +1,5 @@
 import { client } from './client'
-import type { MlListing, MlListingDetail, MlListingUpdateInput } from '../types'
+import type { MlListing, MlListingDetail, MlListingUpdateInput, MlPicture } from '../types'
 
 export async function fetchMlListings(): Promise<MlListing[]> {
   const { data } = await client.get<MlListing[]>('/api/marketplace/mercadolivre/listings')
@@ -34,4 +34,17 @@ export async function syncMlListing(itemId: string): Promise<{ productId: string
     `/api/marketplace/mercadolivre/listings/${itemId}/sync`,
   )
   return { productId: data.product.id }
+}
+
+/** Adiciona fotos novas ao anuncio (upload multipart — backend envia pro Storage e
+ * repassa a URL publica pro ML). Retorna as pictures atualizadas do anuncio. */
+export async function addMlPictures(itemId: string, files: File[]): Promise<MlPicture[]> {
+  const form = new FormData()
+  for (const file of files) form.append('images', file)
+  const { data } = await client.post<MlPicture[]>(
+    `/api/marketplace/mercadolivre/listings/${itemId}/pictures`,
+    form,
+    { headers: { 'Content-Type': 'multipart/form-data' } },
+  )
+  return data
 }

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
-import { fetchMlListingDetail, syncMlListing, updateMlListing } from '../api/marketplaceListings'
+import { fetchMlListingDetail, syncMlListing, updateMlListing, addMlPictures } from '../api/marketplaceListings'
 import { generateDescription } from '../api/ai'
 import { apiErrorMessage } from '../api/client'
 import AppIcon from './AppIcon.vue'
@@ -68,7 +68,11 @@ const draft = reactive({
   widthCm: 0,
   lengthCm: 0,
   weightGrams: 0,
+  freeShipping: true,
 })
+const currentStatus = ref<'active' | 'paused' | 'closed' | 'unknown'>('unknown')
+const uploadingPictures = ref(false)
+const pictureInput = ref<HTMLInputElement | null>(null)
 
 onMounted(async () => {
   try {
@@ -81,6 +85,8 @@ onMounted(async () => {
     draft.widthCm = detail.widthCm
     draft.lengthCm = detail.lengthCm
     draft.weightGrams = detail.weightGrams
+    draft.freeShipping = detail.freeShipping
+    currentStatus.value = (detail.status as 'active' | 'paused' | 'closed') ?? 'unknown'
     pictures.value = detail.pictures
     originalPictureIds.value = detail.pictures.map((p) => p.id)
   } catch (e) {
@@ -121,6 +127,7 @@ async function onSave(): Promise<void> {
       widthCm: draft.widthCm,
       lengthCm: draft.lengthCm,
       weightGrams: draft.weightGrams,
+      freeShipping: draft.freeShipping,
     })
     emit('updated', updated)
     emit('close')
@@ -157,6 +164,41 @@ async function onSyncProduct(): Promise<void> {
     error.value = apiErrorMessage(e)
   } finally {
     saving.value = false
+  }
+}
+
+/** Muda o status do anuncio direto no ML (ativo/pausado/encerrar). */
+async function onSetStatus(status: 'active' | 'paused' | 'closed'): Promise<void> {
+  if (status === 'closed' && !window.confirm('Encerrar o anúncio? Ele sai do ar no Mercado Livre.')) return
+  saving.value = true
+  error.value = null
+  try {
+    const updated = await updateMlListing(props.itemId, { status })
+    currentStatus.value = (updated.status as 'active' | 'paused' | 'closed') ?? 'unknown'
+    emit('updated', updated)
+  } catch (e) {
+    error.value = apiErrorMessage(e)
+  } finally {
+    saving.value = false
+  }
+}
+
+/** Upload de fotos novas: backend envia pro Storage e repassa a URL pro ML. */
+async function onAddPictures(event: Event): Promise<void> {
+  const input = event.target as HTMLInputElement
+  const files = [...(input.files ?? [])]
+  input.value = ''
+  if (files.length === 0) return
+  uploadingPictures.value = true
+  error.value = null
+  try {
+    const updatedPictures = await addMlPictures(props.itemId, files)
+    pictures.value = updatedPictures
+    originalPictureIds.value = updatedPictures.map((p) => p.id)
+  } catch (e) {
+    error.value = apiErrorMessage(e)
+  } finally {
+    uploadingPictures.value = false
   }
 }
 </script>
@@ -200,6 +242,24 @@ async function onSyncProduct(): Promise<void> {
               </div>
               <textarea v-model="draft.description" class="input" rows="6" :disabled="saving" />
             </label>
+
+            <div>
+              <p class="eyebrow mb-2">Status do anúncio</p>
+              <div class="flex flex-wrap gap-1.5">
+                <button
+                  v-for="opt in (['active', 'paused', 'closed'] as const)"
+                  :key="opt"
+                  type="button"
+                  class="btn btn-sm"
+                  :class="currentStatus === opt ? (opt === 'active' ? 'btn-primary' : 'btn-secondary') : 'btn-ghost border border-line'"
+                  :disabled="saving || currentStatus === opt"
+                  @click="onSetStatus(opt)"
+                >
+                  {{ opt === 'active' ? 'Ativo' : opt === 'paused' ? 'Pausado' : 'Encerrado' }}
+                </button>
+              </div>
+              <p class="mt-1 text-xs text-muted">Encerrar tira o anúncio do ar (voltar a ativar é possível).</p>
+            </div>
 
             <div class="grid gap-5 sm:grid-cols-2">
               <label class="block">
@@ -252,19 +312,43 @@ async function onSyncProduct(): Promise<void> {
               </div>
             </div>
 
+            <label class="flex cursor-pointer items-center gap-2">
+              <input v-model="draft.freeShipping" type="checkbox" class="size-4" :disabled="saving" />
+              <span class="text-sm text-ink">Frete grátis (você paga o envio)</span>
+            </label>
+
             <div>
               <div class="mb-3 flex items-center justify-between">
                 <p class="eyebrow !mb-0">Fotos</p>
-                <button
-                  v-if="picturesChanged"
-                  type="button"
-                  class="btn btn-primary btn-sm"
-                  :disabled="savingPictureOrder"
-                  @click="onSavePictureOrder"
-                >
-                  <AppIcon name="check" :size="13" />
-                  {{ savingPictureOrder ? 'Salvando…' : 'Salvar ordem/remoção' }}
-                </button>
+                <div class="flex items-center gap-2">
+                  <input
+                    ref="pictureInput"
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    class="hidden"
+                    @change="onAddPictures"
+                  />
+                  <button
+                    type="button"
+                    class="btn btn-secondary btn-sm"
+                    :disabled="saving || uploadingPictures"
+                    @click="pictureInput?.click()"
+                  >
+                    <AppIcon name="upload" :size="13" />
+                    {{ uploadingPictures ? 'Enviando…' : 'Adicionar fotos' }}
+                  </button>
+                  <button
+                    v-if="picturesChanged"
+                    type="button"
+                    class="btn btn-primary btn-sm"
+                    :disabled="savingPictureOrder"
+                    @click="onSavePictureOrder"
+                  >
+                    <AppIcon name="check" :size="13" />
+                    {{ savingPictureOrder ? 'Salvando…' : 'Salvar ordem/remoção' }}
+                  </button>
+                </div>
               </div>
               <p v-if="pictures.length > 0" class="mb-2 text-xs text-muted">Arraste pra reordenar. A primeira é a capa.</p>
               <ul v-if="pictures.length > 0" class="grid grid-cols-4 gap-2">

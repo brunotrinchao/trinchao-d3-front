@@ -237,6 +237,8 @@ export interface MlListingUpdateInput {
   syncPicturesFromProduct?: true
   /** reordena/remove fotos JA existentes no anuncio pelos ids delas (sem upload) */
   pictureIds?: string[]
+  /** frete gratis (ML: shipping.free_shipping) */
+  freeShipping?: boolean
 }
 
 export interface MlPicture {
