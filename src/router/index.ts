@@ -33,6 +33,11 @@ export const router = createRouter({
       name: 'sales',
       component: () => import('../views/SalesView.vue'),
     },
+    {
+      path: '/configuracoes',
+      name: 'settings',
+      component: () => import('../views/SettingsView.vue'),
+    },
     // compat: link antigo do painel de anúncios
     { path: '/anuncios', redirect: { name: 'published-listings' } },
   ],
