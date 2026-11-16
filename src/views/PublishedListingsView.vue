@@ -62,6 +62,9 @@ const allGroups = computed<ProductGroup[]>(() =>
 // "Total recebido" = vendido − comissão estimada (gold_special ~11%, gold_pro ~14%).
 // Estimativa consciente: comissão exata exige fee por item (N chamadas); decisão
 // registrada no PM: frete não entra (não temos o custo real por venda).
+/** Comissão estimada por marketplace (ML: gold ~11% / pro ~14%). */
+const FEE_RATE: Record<Marketplace, number> = { mercadolivre: 0.11, shopee: 0.11 }
+
 const stats = computed(() => {
   const live = mlListings.value
   const filtered = marketplaceFilter.value === 'all' ? live : live.filter((l) => l.marketplace === marketplaceFilter.value)
@@ -69,14 +72,25 @@ const stats = computed(() => {
   const sold = filtered.reduce((sum, l) => sum + (l.soldQuantity ?? 0), 0)
   const gross = filtered.reduce((sum, l) => sum + (l.soldQuantity ?? 0) * l.price, 0)
   const fee = filtered.reduce(
-    (sum, l) => sum + (l.soldQuantity ?? 0) * l.price * (l.listingTypeId === 'gold_pro' ? 0.14 : 0.11),
+    (sum, l) => sum + (l.soldQuantity ?? 0) * l.price * (FEE_RATE[l.marketplace as Marketplace] ?? 0.11),
     0,
   )
+  // Breakdown por marketplace
+  const perMp = MARKETPLACES.map((mp) => {
+    const items = filtered.filter((l) => l.marketplace === mp)
+    const mpGross = items.reduce((sum, l) => sum + (l.soldQuantity ?? 0) * l.price, 0)
+    const mpFee = items.reduce(
+      (sum, l) => sum + (l.soldQuantity ?? 0) * l.price * (FEE_RATE[mp] ?? 0.11),
+      0,
+    )
+    return { marketplace: mp, gross: mpGross, net: mpGross - mpFee, count: items.length }
+  }).filter((mp) => mp.count > 0)
   return {
     activeCount: active.length,
     sold,
     gross,
     net: gross - fee,
+    perMp,
   }
 })
 const visibleGroups = computed<ProductGroup[]>(() =>
@@ -204,7 +218,16 @@ function onRowError(message: string): void {
         <p class="num mt-3 text-[30px] font-semibold leading-none">
           ~ {{ formatPrice(stats.net) }}
         </p>
-        <p class="mt-2 text-[13px] text-muted">estimativa após comissão ML (gold ~11% / pro ~14%)</p>
+        <p class="mt-2 text-[13px] text-muted">estimativa após comissão (ML ~11% / pro ~14%)</p>
+        <div v-if="stats.perMp.length > 1" class="mt-3 grid gap-1 border-t border-line pt-3">
+          <div v-for="mp in stats.perMp" :key="mp.marketplace" class="flex items-center justify-between text-[13px]">
+            <div class="flex items-center gap-1.5">
+              <MarketplaceBadge :marketplace="mp.marketplace" :size="14" />
+              <span class="text-muted">{{ MARKETPLACE_LABELS[mp.marketplace] }}</span>
+            </div>
+            <span class="num font-medium">~ {{ formatPrice(mp.net) }}</span>
+          </div>
+        </div>
       </article>
     </div>
 
