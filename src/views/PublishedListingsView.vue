@@ -5,6 +5,7 @@ import { useProductsStore } from '../stores/products'
 import { fetchMlListings } from '../api/marketplaceListings'
 import { getProduct, publishProduct } from '../api/products'
 import { apiErrorMessage } from '../api/client'
+import { getMlFee } from '../api/marketplace'
 import AppIcon from '../components/AppIcon.vue'
 import MarketplaceBadge from '../components/MarketplaceBadge.vue'
 import MlListingRow from '../components/MlListingRow.vue'
@@ -41,10 +42,55 @@ async function loadRemote(): Promise<void> {
 onMounted(async () => {
   await store.fetchAll()
   await loadRemote()
+  void loadFees()
 })
 
 const marketplaceFilter = ref<'all' | Marketplace>('all')
 const expanded = reactive(new Set<string>())
+
+// ===== Fee map (comissão exata via API ML) =====
+const feeMap = ref<Map<string, number>>(new Map()) // mlItemId → saleFeeAmount
+const feesLoading = ref(false)
+
+/** Busca comissão exata por combo único (price + categoryId + listingTypeId).
+ * Só para itens com vendas — agrupa por combo pra minimizar chamadas API. */
+async function loadFees(): Promise<void> {
+  feesLoading.value = true
+  try {
+    const combos = new Map<string, { price: number; categoryId: string; listingTypeId: string; itemIds: string[] }>()
+    for (const product of items.value) {
+      const mlMap = product.categoryMaps?.find((c) => c.marketplace === 'mercadolivre')
+      if (!mlMap) continue
+      const mlListing = product.listings?.find((l) => l.marketplace === 'mercadolivre' && l.externalId)
+      if (!mlListing?.externalId) continue
+      const ml = mlListings.value.find((l) => l.id === mlListing.externalId)
+      if (!ml || (ml.soldQuantity ?? 0) <= 0) continue
+      const key = `${ml.price}_${mlMap.categoryId}_${ml.listingTypeId ?? 'gold_special'}`
+      if (!combos.has(key)) {
+        combos.set(key, { price: ml.price, categoryId: mlMap.categoryId, listingTypeId: ml.listingTypeId ?? 'gold_special', itemIds: [] })
+      }
+      combos.get(key)!.itemIds.push(ml.id)
+    }
+    const results = await Promise.all(
+      [...combos.values()].map(async (combo) => {
+        try {
+          const fee = await getMlFee(combo.price, combo.categoryId, combo.listingTypeId)
+          return { itemIds: combo.itemIds, saleFeeAmount: fee.saleFeeAmount }
+        } catch { return null }
+      }),
+    )
+    const newMap = new Map<string, number>()
+    for (const r of results) {
+      if (!r) continue
+      for (const id of r.itemIds) newMap.set(id, r.saleFeeAmount)
+    }
+    feeMap.value = newMap
+  } catch {
+    // best-effort: fallback pra estimativa flat
+  } finally {
+    feesLoading.value = false
+  }
+}
 
 function toggleExpand(key: string): void {
   if (expanded.has(key)) expanded.delete(key)
@@ -72,15 +118,25 @@ const stats = computed(() => {
   const sold = filtered.reduce((sum, l) => sum + (l.soldQuantity ?? 0), 0)
   const gross = filtered.reduce((sum, l) => sum + (l.soldQuantity ?? 0) * l.price, 0)
   const fee = filtered.reduce(
-    (sum, l) => sum + (l.soldQuantity ?? 0) * l.price * (FEE_RATE[l.marketplace as Marketplace] ?? 0.11),
+    (sum, l) => {
+      // Comissão exata via feeMap (API ML) quando disponível; fallback estimativa flat
+      const exact = feeMap.value.get(l.id)
+      const feePerUnit = exact ?? l.price * (FEE_RATE[l.marketplace as Marketplace] ?? 0.11)
+      return sum + (l.soldQuantity ?? 0) * feePerUnit
+    },
     0,
   )
+  const exactCount = filtered.filter((l) => feeMap.value.has(l.id) && (l.soldQuantity ?? 0) > 0).length
   // Breakdown por marketplace
   const perMp = MARKETPLACES.map((mp) => {
     const items = filtered.filter((l) => l.marketplace === mp)
     const mpGross = items.reduce((sum, l) => sum + (l.soldQuantity ?? 0) * l.price, 0)
     const mpFee = items.reduce(
-      (sum, l) => sum + (l.soldQuantity ?? 0) * l.price * (FEE_RATE[mp] ?? 0.11),
+      (sum, l) => {
+        const exact = feeMap.value.get(l.id)
+        const feePerUnit = exact ?? l.price * (FEE_RATE[mp] ?? 0.11)
+        return sum + (l.soldQuantity ?? 0) * feePerUnit
+      },
       0,
     )
     return { marketplace: mp, gross: mpGross, net: mpGross - mpFee, count: items.length }
@@ -90,6 +146,7 @@ const stats = computed(() => {
     sold,
     gross,
     net: gross - fee,
+    exactCount,
     perMp,
   }
 })
@@ -216,9 +273,11 @@ function onRowError(message: string): void {
           Total recebido
         </div>
         <p class="num mt-3 text-[30px] font-semibold leading-none">
-          ~ {{ formatPrice(stats.net) }}
+          {{ stats.exactCount > 0 ? formatPrice(stats.net) : `~ ${formatPrice(stats.net)}` }}
         </p>
-        <p class="mt-2 text-[13px] text-muted">estimativa após comissão (ML ~11% / pro ~14%)</p>
+        <p class="mt-2 text-[13px]" :class="stats.exactCount > 0 ? 'text-ok-600' : 'text-muted'">
+          {{ stats.exactCount > 0 ? 'comissão exata via API ML' : 'estimativa após comissão (ML ~11% / pro ~14%)' }}
+        </p>
         <div v-if="stats.perMp.length > 1" class="mt-3 grid gap-1 border-t border-line pt-3">
           <div v-for="mp in stats.perMp" :key="mp.marketplace" class="flex items-center justify-between text-[13px]">
             <div class="flex items-center gap-1.5">
