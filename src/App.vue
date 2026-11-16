@@ -2,6 +2,7 @@
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import AppIcon from './components/AppIcon.vue'
+import NotificationsDrawer from './components/NotificationsDrawer.vue'
 import { API_URL } from './api/client'
 import { fetchAuthStatus } from './api/auth'
 import { supabase } from './lib/supabase'
@@ -36,12 +37,10 @@ async function loadAuthStatus(): Promise<void> {
 onMounted(loadAuthStatus)
 
 /** Central de notificações: badge na sidebar + polling de 60s (ML live API). */
-const { unreadCount, load, startPolling, stopPolling } = useNotifications()
-const unread = ref(0)
+const { unread, load, startPolling, stopPolling, drawerOpen } = useNotifications()
 onMounted(() => {
-  void load().then(() => (unread.value = unreadCount()))
+  void load()
   startPolling()
-  setInterval(() => (unread.value = unreadCount()), 2000)
 })
 onUnmounted(() => stopPolling())
 
@@ -51,7 +50,6 @@ const crumb = computed(() => {
   if (route.path === '/publicados' || route.path === '/anuncios') return 'Publicados'
   if (route.path === '/vendas') return 'Vendas'
   if (route.path === '/perguntas') return 'Perguntas'
-  if (route.path === '/notificacoes') return 'Notificações'
   if (route.path === '/configuracoes') return 'Configurações'
   return 'Editar produto'
 })
@@ -108,15 +106,6 @@ const marketplaceTone = MARKETPLACE_TONE
           <RouterLink to="/perguntas" class="nav-link">
             <AppIcon name="search" class="nav-ico text-muted" />
             Perguntas
-          </RouterLink>
-          <RouterLink to="/notificacoes" class="nav-link">
-            <AppIcon name="alert" class="nav-ico text-muted" />
-            <span class="flex-1">Notificações</span>
-            <span
-              v-if="unread > 0"
-              class="num rounded-full bg-brand-500 px-1.5 py-0.5 text-[11px] font-semibold text-white"
-              >{{ unread }}</span
-            >
           </RouterLink>
           <RouterLink to="/configuracoes" class="nav-link">
             <AppIcon name="more" class="nav-ico text-muted" />
@@ -184,18 +173,35 @@ const marketplaceTone = MARKETPLACE_TONE
             <span class="text-faint">/</span>
             <span class="font-medium text-ink">{{ crumb }}</span>
           </div>
-          <RouterLink to="/products/new" class="btn btn-primary btn-sm">
-            <AppIcon name="plus" :size="15" />
-            Novo produto
-          </RouterLink>
+          <div class="flex items-center gap-2">
+            <!-- Sino de notificações (abre drawer) -->
+            <button
+              class="relative grid size-9 place-items-center rounded-xl border border-line bg-white text-ink-2 shadow-card transition-colors hover:bg-panel"
+              aria-label="Notificações"
+              @click="drawerOpen = true"
+            >
+              <AppIcon name="bell" :size="16" />
+              <span
+                v-if="unread.length > 0"
+                class="num absolute -right-1 -top-1 grid min-w-[18px] place-items-center rounded-full bg-brand-500 px-1 text-[10px] font-semibold leading-[18px] text-white"
+                >{{ unread.length > 9 ? '9+' : unread.length }}</span
+              >
+            </button>
+            <RouterLink to="/products/new" class="btn btn-primary btn-sm lg:hidden">
+              <AppIcon name="plus" :size="15" />
+              <span class="sr-only">Novo produto</span>
+            </RouterLink>
+          </div>
         </header>
 
-        <main class="min-h-0 flex-1 overflow-y-auto px-4 py-6 sm:px-8 sm:py-8">
+        <main class="min-h-0 flex-1 overflow-x-hidden overflow-y-auto px-4 py-6 sm:px-8 sm:py-8">
           <RouterView v-slot="{ Component }">
             <component :is="Component" :key="route.fullPath" class="rise" />
           </RouterView>
         </main>
       </div>
+
+      <NotificationsDrawer />
     </div>
   </div>
 </template>

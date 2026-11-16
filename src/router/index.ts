@@ -39,11 +39,6 @@ export const router = createRouter({
       component: () => import('../views/QuestionsView.vue'),
     },
     {
-      path: '/notificacoes',
-      name: 'notifications',
-      component: () => import('../views/NotificationsView.vue'),
-    },
-    {
       path: '/configuracoes',
       name: 'settings',
       component: () => import('../views/SettingsView.vue'),

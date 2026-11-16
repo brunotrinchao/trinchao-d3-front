@@ -1,12 +1,12 @@
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { getMlNotifications } from '../api/marketplace'
 import type { MlNotification } from '../types'
 
 /** Central de notificações: live API + "lido" em localStorage (single-user,
- * per-device — sem schema no banco). */
+ * per-device — sem schema no banco). Estado é singleton (drawer global). */
 const READ_KEY = 't3-read-notifs'
 
-function readIds(): Set<string> {
+function loadReadIds(): Set<string> {
   try {
     return new Set(JSON.parse(localStorage.getItem(READ_KEY) ?? '[]') as string[])
   } catch {
@@ -25,7 +25,9 @@ function persistRead(ids: Set<string>): void {
 const notifications = ref<MlNotification[]>([])
 const loading = ref(false)
 const error = ref<string | null>(null)
-const readSet = readIds()
+const drawerOpen = ref(false)
+const filter = ref<'novas' | 'todas'>('novas')
+const readSet = ref<Set<string>>(loadReadIds())
 
 let timer: ReturnType<typeof setInterval> | undefined
 
@@ -55,12 +57,39 @@ export function useNotifications() {
     timer = undefined
   }
 
-  function markAllRead(): void {
-    for (const n of notifications.value) readSet.add(n.id)
-    persistRead(readSet)
+  function markRead(id: string): void {
+    const next = new Set(readSet.value)
+    next.add(id)
+    readSet.value = next
+    persistRead(next)
   }
 
-  const unreadCount = () => notifications.value.filter((n) => !readSet.has(n.id)).length
+  function markAllRead(): void {
+    const next = new Set(readSet.value)
+    for (const n of notifications.value) next.add(n.id)
+    readSet.value = next
+    persistRead(next)
+  }
 
-  return { notifications, loading, error, load, startPolling, stopPolling, markAllRead, unreadCount, readSet }
+  const isRead = (id: string) => readSet.value.has(id)
+  const unread = computed(() => notifications.value.filter((n) => !isRead(n.id)))
+  const visible = computed(() =>
+    filter.value === 'novas' ? unread.value : notifications.value,
+  )
+
+  return {
+    notifications,
+    unread,
+    visible,
+    filter,
+    drawerOpen,
+    loading,
+    error,
+    load,
+    startPolling,
+    stopPolling,
+    markRead,
+    markAllRead,
+    isRead,
+  }
 }
