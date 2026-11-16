@@ -174,6 +174,10 @@ async function save(): Promise<void> {
           <!-- Testador -->
           <div class="grid gap-1.5 rounded-2xl border border-line bg-panel p-4">
             <span class="text-sm font-medium text-ink-2">Testar</span>
+            <p class="text-[12px] text-muted">
+              Use a URL de um anúncio <strong>real</strong> seu — a de exemplo leva a produto
+              inexistente. O link gerado só funciona com anúncio existente no ML.
+            </p>
             <input v-model="testUrl" class="input" spellcheck="false" placeholder="URL de um anúncio ML" />
             <div class="flex items-start gap-2">
               <code class="num min-w-0 flex-1 truncate rounded-lg bg-white px-3 py-2 text-[13px] text-ink-2">{{
