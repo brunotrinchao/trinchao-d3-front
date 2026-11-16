@@ -158,6 +158,17 @@ export interface MlShipmentDetail {
   } | null
 }
 
+/** Pergunta de comprador (DTO de GET /api/marketplace/mercadolivre/questions). */
+export interface MlQuestion {
+  id: string
+  texto: string
+  data: string
+  comprador: string
+  itemId: string
+  anuncio: { titulo: string; thumbnail: string | null }
+  produto: { id: string; titulo: string; thumbnail: string | null } | null
+}
+
 /** Cotação de envio ME2 por cobertura (resposta real de shipping_options/free).
  * listCost = custo cheio que o vendedor paga; discount = subsídio do ML. */
 export interface MlShippingQuote {

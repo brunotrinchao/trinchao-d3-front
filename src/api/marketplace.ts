@@ -1,5 +1,5 @@
 import { client } from './client'
-import type { MlFee, MlOrder, MlSalesStats, MlShipmentDetail, MlShippingQuote } from '../types'
+import type { MlFee, MlOrder, MlQuestion, MlSalesStats, MlShipmentDetail, MlShippingQuote } from '../types'
 
 /** Comissão real do ML pra preço+categoria+tipo de anúncio (valor exato da API, não estimativa). */
 export async function getMlFee(
@@ -50,4 +50,15 @@ export async function getMlOrderShipment(
     `/api/marketplace/mercadolivre/orders/${orderId}/shipment`,
   )
   return data
+}
+
+/** Perguntas não respondidas dos compradores (live API, enriquecidas c/ Product). */
+export async function getMlQuestions(): Promise<MlQuestion[]> {
+  const { data } = await client.get<MlQuestion[]>('/api/marketplace/mercadolivre/questions')
+  return data
+}
+
+/** Responde uma pergunta (POST /answers no ML). */
+export async function answerMlQuestion(questionId: string, text: string): Promise<void> {
+  await client.post(`/api/marketplace/mercadolivre/questions/${questionId}/answer`, { text })
 }

@@ -34,6 +34,11 @@ export const router = createRouter({
       component: () => import('../views/SalesView.vue'),
     },
     {
+      path: '/perguntas',
+      name: 'questions',
+      component: () => import('../views/QuestionsView.vue'),
+    },
+    {
       path: '/configuracoes',
       name: 'settings',
       component: () => import('../views/SettingsView.vue'),
