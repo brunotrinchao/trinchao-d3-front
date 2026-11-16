@@ -1,13 +1,20 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import AppIcon from './components/AppIcon.vue'
 import { API_URL } from './api/client'
 import { fetchAuthStatus } from './api/auth'
+import { supabase } from './lib/supabase'
 import { MARKETPLACES, MARKETPLACE_LABELS, MARKETPLACE_TONE } from './types'
 import type { Marketplace } from './types'
 
 const route = useRoute()
+const router = useRouter()
+
+async function logout(): Promise<void> {
+  await supabase.auth.signOut()
+  await router.replace({ name: 'login' })
+}
 
 const connected = ref<Record<Marketplace, boolean>>({ mercadolivre: false, shopee: false })
 /** Credencial existe mas token expirou — botao vira "Reconectar conta". */
@@ -114,6 +121,14 @@ const marketplaceTone = MARKETPLACE_TONE
               </a>
             </li>
           </ul>
+          <button
+            type="button"
+            class="mt-3 flex w-full items-center gap-2 rounded-xl px-2 py-2 text-xs text-muted transition hover:bg-panel hover:text-ink"
+            @click="logout"
+          >
+            <AppIcon name="close" :size="13" />
+            Sair
+          </button>
         </div>
       </aside>
 

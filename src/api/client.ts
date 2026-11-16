@@ -1,10 +1,18 @@
 import axios from 'axios'
+import { currentAccessToken } from '../lib/supabase'
 
 export const API_URL: string = import.meta.env.VITE_API_URL || 'http://localhost:3001'
 
 export const client = axios.create({
   baseURL: API_URL,
   headers: { 'Content-Type': 'application/json' },
+})
+
+// Sessão Supabase: toda chamada /api leva o JWT como Bearer (middleware do backend valida).
+client.interceptors.request.use(async (config) => {
+  const token = await currentAccessToken()
+  if (token) config.headers.Authorization = `Bearer ${token}`
+  return config
 })
 
 /** URL absoluta de um arquivo servido pelo backend (ex: uploads/<productId>/<file>). */

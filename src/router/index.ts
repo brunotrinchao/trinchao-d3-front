@@ -1,10 +1,17 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { supabase } from '../lib/supabase'
 import ProductListView from '../views/ProductListView.vue'
 
 export const router = createRouter({
   history: createWebHistory(),
   routes: [
     { path: '/', name: 'products', component: ProductListView },
+    {
+      path: '/login',
+      name: 'login',
+      component: () => import('../views/LoginView.vue'),
+      meta: { public: true },
+    },
     {
       path: '/products/new',
       name: 'product-new',
@@ -24,4 +31,12 @@ export const router = createRouter({
     // compat: link antigo do painel de anúncios
     { path: '/anuncios', redirect: { name: 'published-listings' } },
   ],
+})
+
+// Guard: sem sessão Supabase → /login (exceto rotas meta.public). Já logado → fora do /login.
+router.beforeEach(async (to) => {
+  const { data } = await supabase.auth.getSession()
+  const session = data.session
+  if (to.meta.public) return session && to.name === 'login' ? { name: 'products' } : true
+  return session ? true : { name: 'login', query: { redirect: to.fullPath } }
 })
