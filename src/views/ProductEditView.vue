@@ -202,8 +202,13 @@ async function seedRequiredAttributes(productId: string, categoryId: string): Pr
       fetchRequiredCategoryAttributes(categoryId),
       api.getProduct(productId),
     ])
+    // Pula os que o Product ja cobre (dimensoes/peso viram shipping.dimensions no publish).
+    const productCovered = /^(WIDTH|HEIGHT|LENGTH|WEIGHT)$/i
+    const candidates = attributes.filter(
+      (attr) => (attr.catalogRequired || attr.required) && !productCovered.test(attr.id),
+    )
     const existingKeys = new Set(current.customFields.map((field) => field.key.trim().toLowerCase()))
-    const missing = attributes.filter((attr) => !existingKeys.has(attr.name.trim().toLowerCase()))
+    const missing = candidates.filter((attr) => !existingKeys.has(attr.name.trim().toLowerCase()))
     if (missing.length === 0) return
     const fields = [...current.customFields.map(({ key, value }) => ({ key, value })), ...missing.map(({ name }) => ({ key: name, value: '' }))]
     await api.saveCustomFields(productId, { fields })

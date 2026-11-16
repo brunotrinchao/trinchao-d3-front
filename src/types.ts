@@ -45,6 +45,9 @@ export interface ProductCategoryMap {
 export interface MlCategoryAttribute {
   id: string
   name: string
+  catalogRequired?: boolean
+  /** obrigatorio pro anuncio (ex: MODEL, DIAMETER) mesmo sem ser catalog_required */
+  required?: boolean
 }
 
 export interface MarketplaceListing {
