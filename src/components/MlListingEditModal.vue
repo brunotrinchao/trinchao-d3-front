@@ -382,12 +382,19 @@ async function onAddPictures(event: Event): Promise<void> {
               </ul>
               <p v-else class="text-xs text-muted">Nenhuma foto no anúncio.</p>
 
-              <div v-if="productId" class="mt-3">
+              <div v-if="productId" class="mt-3 grid gap-2">
                 <button type="button" class="btn btn-secondary btn-sm" :disabled="syncingPictures" @click="onSyncPictures">
                   <AppIcon name="sync" :size="13" />
                   {{ syncingPictures ? 'Enviando…' : 'Reenviar fotos do produto pro ML' }}
                 </button>
                 <p class="mt-1.5 text-xs text-muted">Usa as fotos cadastradas no produto do app (card de Imagens).</p>
+                <div class="border-t border-line pt-2">
+                  <button type="button" class="btn btn-secondary btn-sm" :disabled="saving" @click="onSyncProduct">
+                    <AppIcon name="sync" :size="13" />
+                    {{ saving ? 'Sincronizando…' : 'Re-sincronizar com o ML' }}
+                  </button>
+                  <p class="mt-1.5 text-xs text-muted">Sobrescreve o produto local com os dados atuais do ML (título, preço, estoque, dimensões, categoria, fotos).</p>
+                </div>
               </div>
               <div v-else class="mt-3 rounded-lg border border-line bg-panel p-3">
                 <p class="text-xs text-muted">
