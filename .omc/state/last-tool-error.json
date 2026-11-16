@@ -1,7 +1,0 @@
-{
-  "tool_name": "mcp__plugin_context-mode_context-mode__ctx_execute",
-  "tool_input_preview": "{\"code\":\";(async () => {\\n  await new Promise((r) => setTimeout(r, 5000))\\n  for (const path of ['/products/abc123', '/publicados', '/products/new']) {\\n    const r = await fetch(`https://trinchao-d3-...",
-  "error": "MCP error -32602: Input validation error: Invalid arguments for tool ctx_execute: [\n  {\n    \"expected\": \"'javascript' | 'typescript' | 'python' | 'shell' | 'ruby' | 'go' | 'rust' | 'php' | 'perl' | 'r' | 'elixir'\",\n    \"received\": \"undefined\",\n    \"code\": \"invalid_type\",\n    \"path\": [\n      \"language\"\n    ],\n    \"message\": \"Required\"\n  }\n]",
-  "timestamp": "2026-11-16T17:43:05.623Z",
-  "retry_count": 1
-}
