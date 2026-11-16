@@ -303,6 +303,23 @@ onMounted(load)
                     </dd>
                   </div>
                 </dl>
+                <div
+                  v-if="shipments.get(o.id)?.envio?.substatus === 'invoice_pending'"
+                  class="mb-3 flex flex-wrap items-center gap-2 rounded-xl border border-warn-600/30 bg-warn-50 px-3 py-2 text-[13px] text-warn-600"
+                >
+                  <AppIcon name="alert" :size="14" />
+                  <span>Etiqueta aguarda <strong>faturamento</strong> — emita a DC-e/no painel do ML</span>
+                  <a
+                    class="btn btn-sm btn-secondary"
+                    :href="`https://www.mercadolivre.com.br/vendas/${o.id}/detalhe`"
+                    target="_blank"
+                    rel="noopener"
+                    @click.stop
+                  >
+                    Faturar no painel ML
+                    <AppIcon name="link" :size="13" />
+                  </a>
+                </div>
                 <div class="mt-3 flex items-center gap-2">
                   <button
                     class="btn btn-sm btn-secondary"
