@@ -284,28 +284,28 @@ async function onAddPictures(event: Event): Promise<void> {
                 <label class="block">
                   <span class="label">Peso</span>
                   <div class="adorn">
-                    <input v-model.number="draft.weightGrams" class="input num" type="number" min="0" step="1" :disabled="saving" />
+                    <input v-model.number="draft.weightGrams" class="input num" type="number" readonly :disabled="saving" />
                     <span class="adorn-end">g</span>
                   </div>
                 </label>
                 <label class="block">
                   <span class="label">Altura</span>
                   <div class="adorn">
-                    <input v-model.number="draft.heightCm" class="input num" type="number" min="0" step="1" :disabled="saving" />
+                    <input v-model.number="draft.heightCm" class="input num" type="number" readonly :disabled="saving" />
                     <span class="adorn-end">cm</span>
                   </div>
                 </label>
                 <label class="block">
                   <span class="label">Largura</span>
                   <div class="adorn">
-                    <input v-model.number="draft.widthCm" class="input num" type="number" min="0" step="1" :disabled="saving" />
+                    <input v-model.number="draft.widthCm" class="input num" type="number" readonly :disabled="saving" />
                     <span class="adorn-end">cm</span>
                   </div>
                 </label>
                 <label class="block">
                   <span class="label">Comprimento</span>
                   <div class="adorn">
-                    <input v-model.number="draft.lengthCm" class="input num" type="number" min="0" step="1" :disabled="saving" />
+                    <input v-model.number="draft.lengthCm" class="input num" type="number" readonly :disabled="saving" />
                     <span class="adorn-end">cm</span>
                   </div>
                 </label>
