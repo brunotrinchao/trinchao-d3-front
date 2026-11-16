@@ -1,0 +1,259 @@
+@import 'tailwindcss';
+
+/* ────────────────────────────────────────────────────────────
+   Design system · Trinchão 3D
+   Superfícies claras e suaves, tinta azul-marinho, acento laranja,
+   números em mono. Tokens em @theme, componentes em @layer components.
+   ──────────────────────────────────────────────────────────── */
+
+@theme {
+  --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+
+  --color-canvas: #ecebe6;
+  --color-panel: #faf9f7;
+  --color-line: #e8e6e0;
+  --color-line-strong: #d8d5cd;
+
+  --color-ink: #15173a;
+  --color-ink-2: #41446a;
+  --color-muted: #7c7f9c;
+  --color-faint: #a9abc0;
+
+  --color-brand-50: #fff3ee;
+  --color-brand-100: #ffe3d8;
+  --color-brand-200: #ffc5ae;
+  --color-brand-400: #ff7a4d;
+  --color-brand-500: #f4511e;
+  --color-brand-600: #dc4310;
+  --color-brand-700: #b53609;
+
+  --color-ok-50: #eaf8f0;
+  --color-ok-600: #12805a;
+  --color-warn-50: #fff6e5;
+  --color-warn-600: #a76508;
+  --color-bad-50: #fdeeee;
+  --color-bad-600: #c4352f;
+
+  --shadow-card: 0 1px 0 rgb(21 23 58 / 0.03), 0 1px 3px rgb(21 23 58 / 0.05);
+  --shadow-pop: 0 10px 30px -10px rgb(21 23 58 / 0.25);
+  --shadow-brand: 0 6px 16px -6px rgb(244 81 30 / 0.55), inset 0 1px 0 rgb(255 255 255 / 0.25);
+}
+
+@layer base {
+  html {
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    font-feature-settings: 'cv11', 'ss01';
+  }
+  body {
+    min-height: 100vh;
+    color: var(--color-ink);
+    background:
+      radial-gradient(1200px 500px at 0% -10%, rgb(244 81 30 / 0.1), transparent 60%),
+      radial-gradient(900px 500px at 100% 0%, rgb(60 90 220 / 0.08), transparent 60%),
+      var(--color-canvas);
+  }
+  ::selection {
+    background: var(--color-brand-100);
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-brand-500);
+    outline-offset: 2px;
+  }
+}
+
+@layer components {
+  /* ── Superfícies ─────────────────────────────── */
+  .card {
+    @apply rounded-2xl border border-line bg-white shadow-card;
+  }
+  .card-head {
+    @apply flex items-start justify-between gap-3 px-5 pt-5 sm:px-6 sm:pt-6;
+  }
+  .card-body {
+    @apply px-5 pb-5 pt-4 sm:px-6 sm:pb-6;
+  }
+  .card-title {
+    @apply text-[15px] font-semibold tracking-tight text-ink;
+  }
+  .card-sub {
+    @apply mt-0.5 text-[13px] text-muted;
+  }
+  .icon-chip {
+    @apply grid size-9 shrink-0 place-items-center rounded-xl border border-line bg-panel text-ink-2;
+  }
+
+  /* ── Tipografia ──────────────────────────────── */
+  .page-title {
+    @apply text-[28px] font-semibold leading-tight tracking-tight text-ink;
+  }
+  .page-sub {
+    @apply mt-1 text-sm text-muted;
+  }
+  .num {
+    @apply font-mono tabular-nums tracking-tight;
+  }
+  .eyebrow {
+    @apply text-[11px] font-medium uppercase tracking-[0.08em] text-muted;
+  }
+
+  /* ── Botões ──────────────────────────────────── */
+  .btn {
+    @apply inline-flex h-10 cursor-pointer select-none items-center justify-center gap-2 whitespace-nowrap rounded-xl px-4 text-sm font-medium transition duration-150 active:translate-y-px disabled:pointer-events-none disabled:opacity-50;
+  }
+  .btn-primary {
+    @apply bg-gradient-to-b from-brand-400 to-brand-500 text-white shadow-brand hover:from-brand-500 hover:to-brand-600;
+  }
+  .btn-dark {
+    @apply bg-ink text-white hover:bg-ink-2;
+  }
+  .btn-secondary {
+    @apply border border-line-strong bg-white text-ink shadow-card hover:bg-panel;
+  }
+  .btn-ghost {
+    @apply text-ink-2 hover:bg-ink/5;
+  }
+  .btn-danger {
+    @apply text-bad-600 hover:bg-bad-50;
+  }
+  .btn-sm {
+    @apply h-8 gap-1.5 rounded-lg px-3 text-xs;
+  }
+  .btn-icon {
+    @apply size-8 rounded-lg p-0;
+  }
+
+  /* ── Menu de ações (dropdown) ────────────────── */
+  .menu-item {
+    @apply flex w-full items-center gap-2.5 px-3 py-2 text-left text-[13px] text-ink-2 transition hover:bg-panel disabled:opacity-50;
+  }
+
+  /* ── Formulários ─────────────────────────────── */
+  .label {
+    @apply mb-1.5 block text-[13px] font-medium text-ink-2;
+  }
+  .input {
+    @apply h-10 w-full rounded-xl border border-line-strong bg-white px-3 text-sm text-ink shadow-[inset_0_1px_0_rgb(21_23_58/0.02)] outline-none transition placeholder:text-faint hover:border-faint focus:border-brand-500 focus:ring-4 focus:ring-brand-500/15 disabled:bg-panel disabled:text-muted;
+  }
+  textarea.input {
+    @apply h-auto min-h-28 resize-y py-2.5 leading-relaxed;
+  }
+  .input-sm {
+    @apply h-8 rounded-lg px-2.5 text-[13px];
+  }
+  .adorn {
+    @apply relative;
+  }
+  .adorn > .input {
+    @apply pr-11;
+  }
+  .adorn > .adorn-end {
+    @apply pointer-events-none absolute inset-y-0 right-3 grid place-items-center font-mono text-xs text-faint;
+  }
+  .adorn.adorn-start > .input {
+    @apply pl-10 pr-3;
+  }
+  .adorn > .adorn-start-el {
+    @apply pointer-events-none absolute inset-y-0 left-3 grid place-items-center font-mono text-xs text-faint;
+  }
+
+  /* ── Pílulas / badges ────────────────────────── */
+  .pill {
+    @apply inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-medium;
+  }
+  .pill::before {
+    content: '';
+    @apply size-1.5 rounded-full bg-current opacity-80;
+  }
+  .pill-ok {
+    @apply bg-ok-50 text-ok-600;
+  }
+  .pill-warn {
+    @apply bg-warn-50 text-warn-600;
+  }
+  .pill-bad {
+    @apply bg-bad-50 text-bad-600;
+  }
+  .pill-neutral {
+    @apply bg-ink/5 text-muted;
+  }
+
+  /* ── Alertas ─────────────────────────────────── */
+  .alert {
+    @apply flex items-start gap-3 rounded-xl border px-4 py-3 text-sm;
+  }
+  .alert-ok {
+    @apply border-ok-600/20 bg-ok-50 text-ok-600;
+  }
+  .alert-bad {
+    @apply border-bad-600/20 bg-bad-50 text-bad-600;
+  }
+  .alert-warn {
+    @apply border-warn-600/20 bg-warn-50 text-warn-600;
+  }
+
+  /* ── Tabs segmentadas ────────────────────────── */
+  .segmented {
+    @apply inline-flex rounded-xl border border-line bg-panel p-1;
+  }
+  .segmented-item {
+    @apply cursor-pointer rounded-lg px-3 py-1.5 text-[13px] font-medium text-muted transition hover:text-ink;
+  }
+  .segmented-item[data-active='true'] {
+    @apply bg-white text-ink shadow-card;
+  }
+
+  /* ── Tabela ──────────────────────────────────── */
+  .table-head {
+    @apply border-y border-line bg-panel text-left text-xs font-medium text-muted;
+  }
+  .table-head th {
+    @apply px-5 py-3 font-medium first:pl-6 last:pr-6;
+  }
+  .table-row {
+    @apply border-b border-line transition last:border-0 hover:bg-panel/70;
+  }
+  .table-row td {
+    @apply px-5 py-3.5 first:pl-6 last:pr-6;
+  }
+
+  /* ── Navegação lateral ───────────────────────── */
+  .nav-link {
+    @apply flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-ink-2 transition hover:bg-ink/5;
+  }
+  .nav-link.router-link-exact-active {
+    @apply bg-white text-ink shadow-card ring-1 ring-line;
+  }
+  .nav-link.router-link-exact-active .nav-ico {
+    @apply text-brand-500;
+  }
+
+  /* ── Barra de progresso ──────────────────────── */
+  .meter {
+    @apply h-1.5 overflow-hidden rounded-full bg-ink/8;
+  }
+  .meter > span {
+    @apply block h-full rounded-full bg-gradient-to-r from-brand-400 to-brand-500;
+  }
+}
+
+/* animação de entrada sutil */
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.rise {
+  animation: rise 0.32s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .rise {
+    animation: none;
+  }
+}
