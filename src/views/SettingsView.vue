@@ -83,7 +83,7 @@ async function save(): Promise<void> {
 </script>
 
 <template>
-  <section class="mx-auto grid max-w-4xl gap-6">
+  <section class="mx-auto grid gap-6">
     <div v-if="error" class="alert alert-bad" role="alert">
       <AppIcon name="alert" :size="18" />
       <span>{{ error }}</span>

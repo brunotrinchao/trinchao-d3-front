@@ -114,10 +114,19 @@ function toggleMenu(): void {
   menuOpen.value = !menuOpen.value
 }
 
+/** Mobile: compartilhamento nativo (navigator.share); desktop: copia. */
 async function copyLink(): Promise<void> {
   if (!props.permalink) return
-  await navigator.clipboard.writeText(props.permalink)
   menuOpen.value = false
+  if (typeof navigator.share === 'function') {
+    try {
+      await navigator.share({ title: props.title, url: props.permalink })
+      return
+    } catch {
+      /* cancelado pelo usuário — cai pro clipboard */
+    }
+  }
+  await navigator.clipboard.writeText(props.permalink)
 }
 
 function closeMenu(): void {
@@ -224,7 +233,7 @@ function runFromMenu(action: () => void): void {
                 @click="copyLink"
               >
                 <AppIcon name="link" :size="14" />
-                Copiar link de afiliado
+                Compartilhar link de afiliado
               </button>
               <button
                 v-if="rawStatus === 'active'"

@@ -153,6 +153,20 @@ async function downloadLabel(orderId: string): Promise<void> {
 }
 
 const copied = ref<string | null>(null)
+const canShare = typeof navigator.share === 'function'
+
+async function shareTracking(code: string): Promise<void> {
+  if (typeof navigator.share === 'function') {
+    try {
+      await navigator.share({ title: 'Rastreamento da entrega', text: `Código de rastreamento: ${code}` })
+      return
+    } catch {
+      /* cancelado */
+    }
+  }
+  await navigator.clipboard.writeText(code)
+}
+
 async function copyTracking(code: string): Promise<void> {
   try {
     await navigator.clipboard.writeText(code)
@@ -167,7 +181,7 @@ onMounted(load)
 </script>
 
 <template>
-  <section class="mx-auto grid max-w-6xl gap-6">
+  <section class="mx-auto grid gap-6">
 
     <button v-if="!loading && !error" class="btn btn-sm btn-ghost justify-self-end" @click="load">
       <AppIcon name="sync" :size="13" />
@@ -210,7 +224,7 @@ onMounted(load)
       <div v-else-if="orders.length === 0" class="p-6 text-sm text-muted">
         Nenhuma venda no período
       </div>
-      <table v-else class="w-full text-left text-sm">
+      <table v-else class="hidden w-full text-left text-sm md:table">
         <tbody>
           <template v-for="o in orders" :key="o.id">
             <tr class="table-row cursor-pointer" @click="toggleExpand(o)">
@@ -335,6 +349,108 @@ onMounted(load)
           </template>
         </tbody>
       </table>
+
+      <!-- Mobile: cards em vez de tabela -->
+      <div v-if="!loading && orders.length > 0" class="grid gap-3 md:hidden">
+        <article
+          v-for="o in orders"
+          :key="o.id"
+          class="card cursor-pointer p-4"
+          @click="toggleExpand(o)"
+        >
+          <div class="flex items-center gap-3">
+            <img
+              v-if="o.itens[0]?.thumbnail"
+              :src="o.itens[0].thumbnail"
+              alt=""
+              class="size-12 shrink-0 rounded-xl border border-line object-cover"
+              loading="lazy"
+            />
+            <span v-else class="grid size-12 shrink-0 place-items-center rounded-xl border border-line bg-panel text-faint">
+              <AppIcon name="box" :size="18" />
+            </span>
+            <div class="min-w-0 flex-1">
+              <p class="truncate text-sm font-medium">{{ o.comprador.nome }}</p>
+              <p class="num text-[12px] text-muted">{{ formatDate(o.dateCreated) }}</p>
+            </div>
+            <div class="text-right">
+              <p class="num text-sm font-semibold">{{ formatPrice(o.total) }}</p>
+              <span class="pill mt-1 inline-block" :class="paymentTone(o)">{{ paymentLabel(o) }}</span>
+            </div>
+          </div>
+          <div class="mt-2 flex flex-wrap items-center gap-1.5 text-[12px] text-ink-2">
+            <span class="truncate">{{ o.itens[0]?.titulo }}</span>
+            <span v-if="o.itens.length > 1" class="text-muted">+{{ o.itens.length - 1 }}</span>
+            <span class="ml-auto"><span class="pill" :class="shippingTone(o)">{{ shippingLabel(o) }}</span></span>
+          </div>
+
+          <!-- Detalhe expandido (mobile) -->
+          <div v-if="expanded.has(o.id)" class="mt-3 border-t border-line pt-3" @click.stop>
+            <div v-if="shipmentLoading.has(o.id)" class="text-sm text-muted">Carregando envio…</div>
+            <div v-else-if="shipmentErrors.has(o.id)" class="text-sm text-bad">{{ shipmentErrors.get(o.id) }}</div>
+            <div v-else-if="shipments.get(o.id)?.envio === null" class="text-sm text-muted">
+              {{ shipments.get(o.id)?.reason ?? 'detalhes de envio indisponíveis' }}
+            </div>
+            <dl v-else class="grid gap-2 text-sm">
+              <div>
+                <dt class="text-[12px] text-muted">Rastreamento</dt>
+                <dd class="num mt-0.5 flex items-center gap-2">
+                  {{ shipments.get(o.id)!.envio!.rastreamento ?? '—' }}
+                  <button
+                    v-if="shipments.get(o.id)!.envio!.rastreamento"
+                    class="btn btn-icon btn-ghost"
+                    @click="copyTracking(shipments.get(o.id)!.envio!.rastreamento!)"
+                  >
+                    <AppIcon :name="copied === shipments.get(o.id)!.envio!.rastreamento ? 'check' : 'copy'" :size="13" />
+                  </button>
+                  <button
+                    v-if="shipments.get(o.id)!.envio!.rastreamento && canShare"
+                    class="btn btn-icon btn-ghost"
+                    aria-label="Compartilhar rastreamento"
+                    @click.stop="shareTracking(shipments.get(o.id)!.envio!.rastreamento!)"
+                  >
+                    <AppIcon name="send" :size="13" />
+                  </button>
+                </dd>
+              </div>
+              <div v-if="shipments.get(o.id)!.envio!.endereco">
+                <dt class="text-[12px] text-muted">Endereço</dt>
+                <dd class="mt-0.5">
+                  {{ shipments.get(o.id)!.envio!.endereco!.rua }},
+                  {{ shipments.get(o.id)!.envio!.endereco!.numero }}
+                  · {{ shipments.get(o.id)!.envio!.endereco!.cidade }}/{{
+                    shipments.get(o.id)!.envio!.endereco!.estado
+                  }}
+                  · CEP {{ shipments.get(o.id)!.envio!.endereco!.cep }}
+                </dd>
+              </div>
+              <div
+                v-if="shipments.get(o.id)?.envio?.substatus === 'invoice_pending'"
+                class="flex flex-wrap items-center gap-2 rounded-xl border border-warn-600/30 bg-warn-50 px-3 py-2 text-[13px] text-warn-600"
+              >
+                <AppIcon name="alert" :size="14" />
+                <span>Etiqueta aguarda <strong>faturamento</strong></span>
+                <a
+                  class="btn btn-sm btn-secondary"
+                  :href="`https://www.mercadolivre.com.br/vendas/${o.id}/detalhe`"
+                  target="_blank"
+                  rel="noopener"
+                  @click.stop
+                >Faturar no painel ML</a>
+              </div>
+              <button
+                class="btn btn-sm btn-secondary mt-1"
+                :disabled="labelBusy === o.id"
+                @click.stop="downloadLabel(o.id)"
+              >
+                <AppIcon name="up" :size="13" />
+                {{ labelBusy === o.id ? 'Baixando…' : 'Baixar etiqueta (PDF)' }}
+              </button>
+            </dl>
+          </div>
+        </article>
+        <p class="num text-center text-[12px] text-muted">{{ pageLabel() }}</p>
+      </div>
       <footer v-if="total > PAGE_SIZE" class="flex items-center justify-between border-t border-line p-3 text-sm">
         <button class="btn btn-sm btn-secondary" :disabled="offset === 0 || loading" @click="paginate(-1)">
           Anterior

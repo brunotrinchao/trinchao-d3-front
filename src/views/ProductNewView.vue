@@ -42,7 +42,7 @@ async function submit(): Promise<void> {
 </script>
 
 <template>
-  <section class="mx-auto grid max-w-3xl gap-6">
+  <section class="mx-auto grid gap-6">
     <header>
       <RouterLink to="/" class="mb-3 inline-flex items-center gap-1.5 text-sm text-muted transition hover:text-ink">
         <AppIcon name="arrow-left" :size="15" />

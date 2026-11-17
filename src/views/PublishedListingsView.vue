@@ -173,7 +173,7 @@ function onRowError(message: string): void {
 </script>
 
 <template>
-  <section class="mx-auto grid max-w-6xl gap-6">
+  <section class="mx-auto grid gap-6">
     <header>
       <h1 class="page-title">Publicados</h1>
       <p class="page-sub">

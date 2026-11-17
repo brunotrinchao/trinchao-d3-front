@@ -66,7 +66,7 @@ onMounted(load)
 </script>
 
 <template>
-  <section class="mx-auto grid max-w-4xl gap-6">
+  <section class="mx-auto grid gap-6">
 
     <button v-if="!loading && !error" class="btn btn-sm btn-ghost justify-self-end" @click="load">
       <AppIcon name="sync" :size="13" />

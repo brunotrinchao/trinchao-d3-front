@@ -267,7 +267,7 @@ const price = computed(() =>
 </script>
 
 <template>
-  <section class="mx-auto grid max-w-6xl gap-6">
+  <section class="mx-auto grid gap-6">
     <header>
       <div class="flex items-center justify-between">
         <RouterLink to="/" class="mb-3 inline-flex items-center gap-1.5 text-sm text-muted transition hover:text-ink">

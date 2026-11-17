@@ -50,7 +50,7 @@ const drafts = computed(() => {
 </script>
 
 <template>
-  <section class="mx-auto grid max-w-6xl gap-6">
+  <section class="mx-auto grid gap-6">
     <header>
       <h1 class="page-title">Produtos</h1>
       <p class="page-sub">Rascunhos — produtos ainda não publicados. Publicados ficam em "Publicados".</p>

@@ -219,6 +219,15 @@
   }
 
   /* ── Navegação lateral ───────────────────────── */
+  /* Bottom-nav mobile: item ativo ganha brand */
+  .bottom-nav-link {
+    @apply flex flex-col items-center gap-0.5 px-3 py-2 text-[11px] font-medium text-muted transition-colors;
+  }
+  .bottom-nav-link.router-link-active {
+    @apply text-brand-600;
+  }
+  .bottom-nav-link .nav-ico { @apply text-current; }
+
   .nav-link {
     @apply flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-ink-2 transition hover:bg-ink/5;
   }

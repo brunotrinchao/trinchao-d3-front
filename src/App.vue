@@ -55,11 +55,11 @@ const marketplaceTone = MARKETPLACE_TONE
 
   <div v-else class="min-h-screen lg:p-4">
     <div
-      class="mx-auto flex min-h-screen max-w-[1480px] flex-col overflow-hidden bg-panel lg:h-[calc(100vh-2rem)] lg:min-h-0 lg:flex-row lg:rounded-[28px] lg:border lg:border-white/70 lg:shadow-pop"
+      class="flex min-h-screen flex-col overflow-hidden bg-panel lg:h-[calc(100vh-2rem)] lg:min-h-0 lg:flex-row lg:rounded-[28px] lg:border lg:border-white/70 lg:shadow-pop"
     >
       <!-- Sidebar -->
       <aside
-        class="flex shrink-0 flex-col gap-6 border-b border-line bg-white/80 px-4 py-4 backdrop-blur lg:w-[264px] lg:border-b-0 lg:border-r lg:px-5 lg:py-6"
+        class="hidden shrink-0 flex-col gap-6 border-b border-line bg-white/80 px-4 py-4 backdrop-blur lg:flex lg:w-[264px] lg:border-b-0 lg:border-r lg:px-5 lg:py-6"
       >
         <div class="flex items-center justify-between lg:justify-start">
           <RouterLink to="/" class="flex items-center gap-2.5">
@@ -172,9 +172,20 @@ const marketplaceTone = MARKETPLACE_TONE
       <!-- Conteúdo -->
       <div class="flex min-w-0 flex-1 flex-col">
         <header
-          class="flex h-16 shrink-0 items-center justify-end gap-3 border-b border-line bg-white/60 px-4 backdrop-blur sm:px-8"
+          class="flex h-16 shrink-0 items-center justify-between gap-3 border-b border-line bg-white/60 px-4 backdrop-blur sm:px-8"
         >
           <div class="flex items-center gap-2">
+            <!-- Mobile: brand no header (sidebar some) -->
+            <RouterLink to="/" class="flex items-center gap-2 lg:hidden">
+              <span
+                class="grid size-9 place-items-center rounded-xl bg-gradient-to-br from-brand-400 to-brand-600 text-white shadow-brand"
+              >
+                <AppIcon name="box" :size="20" />
+              </span>
+              <span class="text-[17px] font-semibold tracking-tight">
+                trinchão<span class="text-brand-500">3d</span>
+              </span>
+            </RouterLink>
             <!-- Sino de notificações (abre drawer) -->
             <button
               class="relative grid size-9 place-items-center rounded-xl border border-line bg-white text-ink-2 shadow-card transition-colors hover:bg-panel"
@@ -188,14 +199,17 @@ const marketplaceTone = MARKETPLACE_TONE
                 >{{ unread.length > 9 ? '9+' : unread.length }}</span
               >
             </button>
-            <RouterLink to="/products/new" class="btn btn-primary btn-sm lg:hidden">
-              <AppIcon name="plus" :size="15" />
-              <span class="sr-only">Novo produto</span>
+            <RouterLink
+              to="/products/new"
+              class="grid size-9 place-items-center rounded-xl bg-brand-500 text-white shadow-brand transition-colors hover:bg-brand-600"
+              aria-label="Novo produto"
+            >
+              <AppIcon name="plus" :size="16" />
             </RouterLink>
           </div>
         </header>
 
-        <main class="min-h-0 flex-1 overflow-x-hidden overflow-y-auto px-4 py-6 sm:px-8 sm:py-8">
+        <main class="min-h-0 flex-1 overflow-x-hidden overflow-y-auto px-4 pb-24 pt-6 sm:px-8 sm:pb-8 sm:py-8 lg:pb-8">
           <RouterView v-slot="{ Component }">
             <component :is="Component" :key="route.fullPath" class="rise" />
           </RouterView>
@@ -203,6 +217,34 @@ const marketplaceTone = MARKETPLACE_TONE
       </div>
 
       <NotificationsDrawer />
+
+      <!-- Bottom-nav mobile: 5 destinos diretos -->
+      <nav
+        class="fixed inset-x-0 bottom-0 z-40 flex items-stretch justify-around border-t border-line bg-white/90 backdrop-blur lg:hidden"
+        aria-label="Principal (mobile)"
+        style="padding-bottom: env(safe-area-inset-bottom)"
+      >
+        <RouterLink to="/" class="bottom-nav-link">
+          <AppIcon name="layers" :size="20" />
+          Produtos
+        </RouterLink>
+        <RouterLink to="/publicados" class="bottom-nav-link">
+          <AppIcon name="send" :size="20" />
+          Publicados
+        </RouterLink>
+        <RouterLink to="/vendas" class="bottom-nav-link">
+          <AppIcon name="wallet" :size="20" />
+          Vendas
+        </RouterLink>
+        <RouterLink to="/perguntas" class="bottom-nav-link">
+          <AppIcon name="search" :size="20" />
+          Perguntas
+        </RouterLink>
+        <RouterLink to="/configuracoes" class="bottom-nav-link">
+          <AppIcon name="more" :size="20" />
+          Config
+        </RouterLink>
+      </nav>
     </div>
   </div>
 </template>
