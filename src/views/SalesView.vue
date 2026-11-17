@@ -135,6 +135,12 @@ function formatDate(iso: string): string {
   return new Date(iso).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })
 }
 
+/** URL de rastreamento Correios — só para códigos no formato deles (ex: RB123456789BR). */
+function trackingUrl(code: string): string | null {
+  if (!/^[A-Z]{2}[0-9]{9,11}BR$/i.test(code.trim())) return null
+  return `https://rastreio.correios.com.br/objetos/track?objectCodes=${code.trim().toUpperCase()}`
+}
+
 function formatPrice(value: number): string {
   return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 }
@@ -277,7 +283,17 @@ onMounted(load)
                   <div>
                     <dt class="text-[12px] text-muted">Rastreamento</dt>
                     <dd class="mt-0.5 flex items-center gap-2">
-                      <span class="num">{{ shipments.get(o.id)!.envio!.rastreamento ?? '—' }}</span>
+                      <template v-if="shipments.get(o.id)!.envio!.rastreamento">
+                        <a
+                          v-if="trackingUrl(shipments.get(o.id)!.envio!.rastreamento!)"
+                          class="num underline decoration-line-strong underline-offset-2 hover:text-brand-600"
+                          :href="trackingUrl(shipments.get(o.id)!.envio!.rastreamento!)!"
+                          target="_blank"
+                          rel="noopener"
+                        >{{ shipments.get(o.id)!.envio!.rastreamento }}</a>
+                        <span v-else class="num">{{ shipments.get(o.id)!.envio!.rastreamento }}</span>
+                      </template>
+                      <span v-else class="num">—</span>
                       <button
                         v-if="shipments.get(o.id)!.envio!.rastreamento"
                         class="btn btn-icon btn-ghost"
@@ -334,7 +350,7 @@ onMounted(load)
                     <AppIcon name="link" :size="13" />
                   </a>
                 </div>
-                <div class="mt-3 flex items-center gap-2">
+                <div v-if="!shipments.get(o.id)?.envio?.rastreamento" class="mt-3 flex items-center gap-2">
                   <button
                     class="btn btn-sm btn-secondary"
                     :disabled="labelBusy === o.id"
@@ -394,8 +410,18 @@ onMounted(load)
             <dl v-else class="grid gap-2 text-sm">
               <div>
                 <dt class="text-[12px] text-muted">Rastreamento</dt>
-                <dd class="num mt-0.5 flex items-center gap-2">
-                  {{ shipments.get(o.id)!.envio!.rastreamento ?? '—' }}
+                <dd class="num mt-0.5 flex flex-wrap items-center gap-2">
+                  <template v-if="shipments.get(o.id)!.envio!.rastreamento">
+                    <a
+                      v-if="trackingUrl(shipments.get(o.id)!.envio!.rastreamento!)"
+                      class="underline decoration-line-strong underline-offset-2"
+                      :href="trackingUrl(shipments.get(o.id)!.envio!.rastreamento!)!"
+                      target="_blank"
+                      rel="noopener"
+                    >{{ shipments.get(o.id)!.envio!.rastreamento }}</a>
+                    <span v-else>{{ shipments.get(o.id)!.envio!.rastreamento }}</span>
+                  </template>
+                  <span v-else>—</span>                  {{ shipments.get(o.id)!.envio!.rastreamento ?? '—' }}
                   <button
                     v-if="shipments.get(o.id)!.envio!.rastreamento"
                     class="btn btn-icon btn-ghost"
@@ -439,6 +465,7 @@ onMounted(load)
                 >Faturar no painel ML</a>
               </div>
               <button
+                v-if="!shipments.get(o.id)?.envio?.rastreamento"
                 class="btn btn-sm btn-secondary mt-1"
                 :disabled="labelBusy === o.id"
                 @click.stop="downloadLabel(o.id)"
