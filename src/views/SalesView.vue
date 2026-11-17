@@ -138,7 +138,7 @@ function formatDate(iso: string): string {
 /** URL de rastreamento Correios — só para códigos no formato deles (ex: RB123456789BR). */
 function trackingUrl(code: string): string | null {
   if (!/^[A-Z]{2}[0-9]{9,11}BR$/i.test(code.trim())) return null
-  return `https://rastreio.correios.com.br/objetos/track?objectCodes=${code.trim().toUpperCase()}`
+  return `https://rastreamento.correios.com.br/app/index.php?objeto=${code.trim().toUpperCase()}`
 }
 
 function formatPrice(value: number): string {
